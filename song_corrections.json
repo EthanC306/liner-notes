@@ -1,0 +1,43 @@
+{
+  "_about": "Official details for local files (YouTube rips). Keyed by the file's title in playlist_songs.json. The app shows these details instead of the file name; added date, position and length still come from Spotify.",
+  "local:Y2Mate.is - ☆lil peep☆  the way i see things (lyrics) ♡-_0aZpphRDbk-160k-1657521867579": {
+    "title": "The Way I See Things",
+    "artists": [
+      {
+        "name": "Lil Peep",
+        "id": "2kCcBybjl3SAtIcwdWpUe3",
+        "url": "https://open.spotify.com/artist/2kCcBybjl3SAtIcwdWpUe3"
+      }
+    ],
+    "album": {
+      "name": "LiL PEEP PART ONE",
+      "type": "album",
+      "release_date": "2015-09-19",
+      "release_date_precision": "day",
+      "image": "https://coverartarchive.org/release/2132b4f2-85e1-4e5b-9490-39b72c508f92/front-500",
+      "url": "https://musicbrainz.org/release/2132b4f2-85e1-4e5b-9490-39b72c508f92"
+    },
+    "source": {
+      "name": "MusicBrainz",
+      "url": "https://musicbrainz.org/recording/29666a31-f89e-4b02-b37a-6a160a4f285a",
+      "note": "Same 2:13 recording, from the 2015 mixtape LiL PEEP PART ONE. MusicBrainz styles the title in lowercase."
+    }
+  },
+  "local:Y2Mate.is - guardin - fake (prod. by canis major)-hgLryZHnh-w-160k-1654285075557": {
+    "title": "fake (prod. by canis major)",
+    "artists": [
+      {
+        "name": "guardin",
+        "id": null,
+        "url": null,
+        "musicbrainz_id": "daefe844-55f2-47d8-a1bf-344484dfdade"
+      }
+    ],
+    "album": null,
+    "source": {
+      "name": "MusicBrainz",
+      "url": "https://musicbrainz.org/artist/daefe844-55f2-47d8-a1bf-344484dfdade",
+      "note": "guardin is on MusicBrainz, but this song isn't, so there's no album or release date."
+    }
+  }
+}
