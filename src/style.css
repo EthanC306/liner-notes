@@ -578,3 +578,5 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
   .tile-name { font-size: .7rem; }
   .drop-marker { min-height: 3.8rem; }
 }
+.chip-clear { padding: .15rem .7rem; font-size: .95rem; }
+.page { display: contents; }  /* its sections lay out in #app's grid as before */

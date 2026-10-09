@@ -4,6 +4,7 @@ import { openArtist } from "../artist-sheet.js";
 import { GROUPS, NO_GENRE, groupOf } from "../genres.js";
 import { esc, fmtDate } from "../util.js";
 import * as tierList from "./tiers.js";
+import { filter } from "../filter.js";
 
 const STORE_KEY = "playlist-stat:artists-view";
 
@@ -22,9 +23,9 @@ const artistGroup = a => (a.genres.length ? groupOf(a.genres[0]) : NO_GENRE);
 
 export function render(root, playlist) {
   const { artists } = playlist;
-  let view = { sort: "songs", group: null, q: "" };
+  let view = { sort: "songs", q: "" };  // the genre filter is the shared one in filter.js
   let expanded = false;
-  try { view = { ...view, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}"), q: "" }; } catch { /* storage blocked */ }
+  try { view.sort = JSON.parse(localStorage.getItem(STORE_KEY) || "{}").sort || view.sort; } catch { /* storage blocked */ }
   if (!SORTS[view.sort]) view.sort = "songs";
 
   const groups = [...GROUPS, NO_GENRE]
@@ -47,6 +48,7 @@ export function render(root, playlist) {
     </div>
     <ul class="narrow-chips" aria-label="Filter by genre">
       ${groups.map(g => `<li><button type="button" class="narrow-chip" data-group="${g.id}">${esc(g.name)} <span>${g.count}</span></button></li>`).join("")}
+      <li><button type="button" class="ghost-btn chip-clear" id="clearGroups" hidden>Clear genres</button></li>
     </ul>
 
     <p class="muted" id="artistCount" aria-live="polite"></p>
@@ -60,13 +62,15 @@ export function render(root, playlist) {
 
   function draw() {
     root.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === view.sort));
-    root.querySelectorAll("[data-group]").forEach(b => b.setAttribute("aria-pressed", b.dataset.group === view.group));
+    const picked = filter.groups();
+    root.querySelectorAll("[data-group]").forEach(b => b.setAttribute("aria-pressed", picked.has(b.dataset.group)));
+    $("#clearGroups").hidden = !picked.size;
     const q = view.q.toLowerCase();
     const list = artists
-      .filter(a => (!view.group || artistGroup(a).id === view.group) && (!q || a.name.toLowerCase().includes(q)))
+      .filter(a => (!picked.size || picked.has(artistGroup(a).id)) && (!q || a.name.toLowerCase().includes(q)))
       .sort(SORTS[view.sort].fn);
 
-    const groupName = view.group ? groups.find(g => g.id === view.group)?.name : null;
+    const groupName = picked.size ? groups.filter(g => picked.has(g.id)).map(g => g.name).join(" or ") : null;
     $("#artistCount").textContent = list.length === artists.length
       ? `${artists.length} artists, ${SORTS[view.sort].label.toLowerCase()}.`
       : `${list.length} of ${artists.length} artists${groupName ? ` in ${groupName}` : ""}${view.q ? ` matching “${view.q}”` : ""}.`;
@@ -95,7 +99,7 @@ export function render(root, playlist) {
     empty.hidden = list.length > 0;
     empty.textContent = `No artist matches “${view.q}”${groupName ? ` in ${groupName}` : ""}.`;
 
-    try { localStorage.setItem(STORE_KEY, JSON.stringify({ sort: view.sort, group: view.group })); } catch { /* storage blocked */ }
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ sort: view.sort })); } catch { /* storage blocked */ }
   }
 
   let lastColumns = 0;
@@ -117,11 +121,18 @@ export function render(root, playlist) {
     const sort = e.target.closest("[data-sort]");
     if (sort) { view.sort = sort.dataset.sort; return draw(); }
     const group = e.target.closest("[data-group]");
-    if (group) { view.group = view.group === group.dataset.group ? null : group.dataset.group; return draw(); }
+    if (group) return filter.toggleGroup(group.dataset.group);  // the subscription below redraws
+    if (e.target.closest("#clearGroups")) return filter.clear();
     const card = e.target.closest("[data-artist]");
     if (card) openArtist(card.dataset.artist);
   });
   $("#artistSearch").addEventListener("input", e => { view.q = e.target.value.trim(); draw(); });
+
+  // Redraw when the shared filter changes, here or anywhere else; stop once this page is gone.
+  const stop = filter.subscribe(() => {
+    if (!root.contains($("#artistGrid"))) return stop();
+    draw();
+  });
 
   draw();
   tierList.render($("#tierListHere"), playlist);

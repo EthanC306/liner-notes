@@ -36,7 +36,12 @@ function route() {
   const [key, artist] = location.hash.slice(1).split("/");
   const current = pages[key] ? key : "home";
   if (current !== shown) {
-    pages[current].page.render(app, playlist);
+    // A fresh element per visit, so the click handlers a page adds go away with it
+    // instead of piling up on #app each time the page is opened.
+    const pageRoot = document.createElement("div");
+    pageRoot.className = "page";
+    app.replaceChildren(pageRoot);
+    pages[current].page.render(pageRoot, playlist);
     shown = current;
     window.scrollTo(0, 0);
     app.querySelector("h1")?.focus({ preventScroll: true });
