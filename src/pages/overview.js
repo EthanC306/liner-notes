@@ -2,7 +2,7 @@ import { esc, fmtLength, fmtRelease } from "../util.js";
 import { openArtist } from "../artist-sheet.js";
 import { filter } from "../filter.js";
 import { artistByName, summarize } from "../data.js";
-import { GROUPS, NO_GENRE, songGroup } from "../genres.js";
+import { GROUPS, NO_GENRE, songGroup, byCountOtherLast } from "../genres.js";
 
 const NS = "http://www.w3.org/2000/svg";
 const ALL_GROUPS = [...GROUPS, NO_GENRE];
@@ -20,7 +20,7 @@ export function render(root, playlist) {
     // featured) is left out: no chip, and it doesn't filter anything.
     const picked = new Set([...filter.groups()].filter(id => songCount(id) > 0));
     const songs = picked.size ? playlist.songs.filter(s => picked.has(groupOfSong.get(s))) : playlist.songs;
-    const chips = ALL_GROUPS.filter(g => picked.has(g.id)).map(g => ({ ...g, count: songCount(g.id) }));
+    const chips = ALL_GROUPS.filter(g => picked.has(g.id)).map(g => ({ ...g, count: songCount(g.id) })).sort(byCountOtherLast);
     // Three chips fit beside +N and Clear all; on a phone only two do.
     const visible = matchMedia("(max-width: 480px)").matches ? 2 : 3;
     if (chips.length <= visible) chipsOpen = false;
@@ -100,9 +100,13 @@ function draw(root, { songs, artists, albums, onceCount, rips }, { chips, total,
   // ---------- front ----------
   const top = artists.slice(0, 10);
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  // Featured artists don't count as the playlist's artists (the same rule as the Artists
+  // tab's genre chips), so they're listed separately as guests.
+  const mainCount = new Set(songs.map(s => s.artists[0]).filter(Boolean)).size;
+  const guests = artists.length - mainCount;
   const topTwo = top.length > 1 ? songs.filter(s => s.artists.includes(top[0].name) || s.artists.includes(top[1].name)).length : 0;
   $("facts").innerHTML = `
-    <p><strong>${plural(artists.length, "artist", "artists")}</strong> across <strong>${plural(albums.length, "album", "albums")}</strong>.</p>
+    <p><strong>${plural(mainCount, "artist", "artists")}</strong> across <strong>${plural(albums.length, "album", "albums")}</strong>${guests ? `, plus ${plural(guests, "featured guest", "featured guests")}` : ""}.</p>
     ${topTwo && top[1].count > 1 && topTwo < songs.length ? `<p>${esc(top[0].name)} and ${esc(top[1].name)} alone cover <strong>${topTwo} songs</strong>, about one in ${Math.round(songs.length / topTwo)}.</p>` : ""}
     ${onceCount ? `<p><strong>${plural(onceCount, "artist", "artists")}</strong> ${onceCount === 1 ? "shows" : "show"} up only once.</p>` : ""}
     ${rips ? `<p>${plural(rips, "song", "songs")} came from a YouTube rip instead of Spotify’s catalog.</p>` : ""}`;

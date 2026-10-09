@@ -1,7 +1,7 @@
 // Breakdown: every song sorted into one broad genre group, as bars you can click
 // to filter, then specific genres to narrow it down further.
 import { artistByName } from "../data.js";
-import { GROUPS, NO_GENRE, songGroup, artistGenres } from "../genres.js";
+import { GROUPS, NO_GENRE, songGroup, artistGenres, byCountOtherLast } from "../genres.js";
 import { openArtist } from "../artist-sheet.js";
 import { esc } from "../util.js";
 import { filter } from "../filter.js";
@@ -16,7 +16,7 @@ export function render(root, { songs }) {
   const groups = [...GROUPS, NO_GENRE]
     .map(g => ({ ...g, count: rows.filter(r => r.group.id === g.id).length }))
     .filter(g => g.count)
-    .sort((a, b) => (a.id === "none") - (b.id === "none") || b.count - a.count);
+    .sort(byCountOtherLast);
   const max = Math.max(...groups.map(g => g.count));
 
   // Genre groups come from the shared filter, so a pick here carries to the other tabs.

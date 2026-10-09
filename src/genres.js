@@ -17,6 +17,13 @@ export const GROUPS = [
   { id: "other", name: "Other", test: () => true },
 ];
 export const NO_GENRE = { id: "none", name: "No genre found" };
+// Artists tab only: artists who are never the main artist on a song.
+export const FEATURES_ONLY = { id: "features", name: "Features only" };
+
+// The order genre groups are listed in everywhere: biggest first, then Other,
+// Features only and No genre found. Give it groups with a count.
+const LAST = { other: 1, features: 2, none: 3 };
+export const byCountOtherLast = (a, b) => (LAST[a.id] || 0) - (LAST[b.id] || 0) || b.count - a.count;
 
 const groupCache = new Map();
 export function groupOf(genre) {

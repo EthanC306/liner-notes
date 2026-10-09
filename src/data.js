@@ -15,9 +15,14 @@ const lastfm = Object.values(import.meta.glob("../lastfm_artists.json", { eager:
 // then MusicBrainz's user tags, then Last.fm's tags. Tags are free text ("seen live",
 // "american"), so only ones that name a genre count.
 const genreLike = tags => (tags || []).filter(t => groupOf(t).id !== "other");
+// Your file can say "emo", ["emo", "math rock"] or "emo, math rock"; any of them
+// becomes a clean lowercase list.
+const asGenreList = v => (Array.isArray(v) ? v : String(v ?? "").split(","))
+  .map(g => String(g).trim().toLowerCase()).filter(Boolean);
+
 function genreInfo(name, mb) {
-  const yours = yourGenres[name];
-  if (yours && yours.length) return { genres: [].concat(yours), genreSource: "your genre file" };
+  const yours = asGenreList(yourGenres[name]);
+  if (yours.length) return { genres: yours, genreSource: "your genre file" };
   if (mb?.genres?.length) return { genres: mb.genres, genreSource: "MusicBrainz" };
   if (genreLike(mb?.tags).length) return { genres: genreLike(mb.tags), genreSource: "MusicBrainz tags" };
   if (lastfm[name]?.genres?.length) return { genres: lastfm[name].genres, genreSource: "Last.fm" };

@@ -1,6 +1,6 @@
 {
   "_how_to_use": [
-    "Write a genre for any artist, like \"midwest emo\", or a list like [\"emo\", \"math rock\"]; the first one decides the song's group.",
+    "Write one genre like \"midwest emo\", or several as a list like [\"emo\", \"math rock\"]; the first one decides the group. Lowercase, like MusicBrainz.",
     "What you write here always wins over MusicBrainz and Last.fm, so you can also add any other artist to fix a genre the databases got wrong.",
     "Groups go by words in the genre: emo (Midwest emo), emo rap / cloud rap, metal (Metal), post-hardcore / screamo / hardcore (Emo & post-hardcore), punk, hip hop / rap / trap, r&b / soul, indie / alternative, rock, pop / electronic.",
     "Leave \"\" for artists you don't want to set. Artists left blank are looked up on Last.fm by lastfm_genres.py."
@@ -10,7 +10,10 @@
   "Fail Better, Heal Faster": "midwest emo",
   "Thoughts on Bowling": "midwest emo",
   "Truman Reter": "indie folk",
-  "alex_g_offline": "indie folk, indie rock ",
+  "alex_g_offline": [
+    "indie folk",
+    "indie rock"
+  ],
   "Lederrick": "other",
   "BLISSFOOL": "edm",
   "Guy Music": "alternative rock",
@@ -18,33 +21,60 @@
   "ZionKat": "other",
   "2006WR": "edm",
   "Alexander Brettin": "other",
-  "Arcy Drive": "attic rock, indie rock",
+  "Arcy Drive": [
+    "indie rock",
+    "attic rock"
+  ],
   "Asal": "alternative pop",
-  "Balu Brigada": "pop rock",
+  "Balu Brigada": [
+    "indie pop",
+    "pop rock"
+  ],
   "boycomma": "midwest emo",
-  "Briston Maroney": "",
-  "buffalo_farm": "",
-  "Cory Castro": "",
-  "Dahi": "",
-  "Dexter and The Moonrocks": "",
-  "dj gummy bear": "",
-  "Ecchi.mp4": "",
-  "Isles & Glaciers": "",
-  "Jason Butler": "",
-  "Jozzy": "",
-  "Julia Wolf": "",
-  "juuku": "",
-  "Kids In America": "",
-  "Kiss the Scientist": "",
-  "Lindsey Stamey": "",
-  "Nedarb": "",
-  "People in the Daytime": "",
-  "rainy bear": "",
-  "Rehash": "",
-  "Tades Sanville": "",
-  "Taylour Paige": "",
-  "The Fraternals": "",
-  "Tommy Ragen": "",
-  "TRSH": "",
-  "WesGhost": ""
+  "Briston Maroney": [
+    "indie rock",
+    "americana",
+    "folk-pop"
+  ],
+  "buffalo_farm": "trap metal",
+  "Cory Castro": "other",
+  "Dahi": "other",
+  "Dexter and The Moonrocks": [
+    "western space grunge",
+    "sad country"
+  ],
+  "dj gummy bear": "edm",
+  "Ecchi.mp4": "edm",
+  "Isles & Glaciers": "post hardcore",
+  "Jason Butler": "other",
+  "Jozzy": "other",
+  "Julia Wolf": [
+    "emo",
+    "indie rock"
+  ],
+  "juuku": "other",
+  "Kids In America": "alternative rock",
+  "Kiss the Scientist": "rock",
+  "Lindsey Stamey": "other",
+  "Nedarb": "other",
+  "People in the Daytime": "indie",
+  "rainy bear": "other",
+  "Rehash": "rock",
+  "Tades Sanville": "other",
+  "Taylour Paige": "other",
+  "The Fraternals": "rock",
+  "Tommy Ragen": "punk folk",
+  "TRSH": [
+    "emo",
+    "midwest emo"
+  ],
+  "WesGhost": [
+    "pop punk",
+    "emo hip hop"
+  ],
+  "Told Slant": [
+    "indie folk",
+    "indie rock"
+  ],
+  "airbag": "alternative rock"
 }

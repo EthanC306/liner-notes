@@ -1,7 +1,7 @@
 // Artists: every artist on the playlist as a photo tile, with search, sorting and
 // genre filters. A tile opens the artist popup.
 import { openArtist } from "../artist-sheet.js";
-import { GROUPS, NO_GENRE, artistGroup } from "../genres.js";
+import { GROUPS, NO_GENRE, FEATURES_ONLY, artistGroup, byCountOtherLast } from "../genres.js";
 import { esc, fmtDate } from "../util.js";
 import * as tierList from "./tiers.js";
 import { filter } from "../filter.js";
@@ -22,15 +22,19 @@ const initials = name => name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filte
 
 export function render(root, playlist) {
   const { artists } = playlist;
+  // Featured artists don't count toward a genre: an artist is in their genre's chip
+  // only if they're the main artist on at least one song. Everyone else is "Features only".
+  const mainArtists = new Set(playlist.songs.map(s => s.artists[0]).filter(Boolean));
+  const tabGroup = a => (mainArtists.has(a.name) ? artistGroup(a) : FEATURES_ONLY);
   let view = { sort: "songs", q: "" };  // the genre filter is the shared one in filter.js
   let expanded = false;
   try { view.sort = JSON.parse(localStorage.getItem(STORE_KEY) || "{}").sort || view.sort; } catch { /* storage blocked */ }
   if (!SORTS[view.sort]) view.sort = "songs";
 
-  const groups = [...GROUPS, NO_GENRE]
-    .map(g => ({ ...g, count: artists.filter(a => artistGroup(a).id === g.id).length }))
+  const groups = [...GROUPS, NO_GENRE, FEATURES_ONLY]
+    .map(g => ({ ...g, count: artists.filter(a => tabGroup(a).id === g.id).length }))
     .filter(g => g.count)
-    .sort((a, b) => (a.id === "none") - (b.id === "none") || b.count - a.count);
+    .sort(byCountOtherLast);
 
   root.innerHTML = `
   <section class="artists-page">
@@ -60,14 +64,17 @@ export function render(root, playlist) {
 
   function draw() {
     root.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === view.sort));
-    const picked = filter.groups();
+    // Only groups that have a chip here count. A saved pick for a group that's since
+    // emptied (like "No genre found" once every artist has a genre) has no chip to
+    // undo it with, so it's ignored, the same as on the Overview and Breakdown.
+    const picked = new Set([...filter.groups()].filter(id => groups.some(g => g.id === id)));
     root.querySelectorAll("[data-group]").forEach(b => {
       b.setAttribute("aria-pressed", picked.has(b.dataset.group));
       b.title = picked.has(b.dataset.group) ? "Remove this filter" : "";
     });
     const q = view.q.toLowerCase();
     const list = artists
-      .filter(a => (!picked.size || picked.has(artistGroup(a).id)) && (!q || a.name.toLowerCase().includes(q)))
+      .filter(a => (!picked.size || picked.has(tabGroup(a).id)) && (!q || a.name.toLowerCase().includes(q)))
       .sort(SORTS[view.sort].fn);
 
     const groupName = picked.size ? groups.filter(g => picked.has(g.id)).map(g => g.name).join(" or ") : null;

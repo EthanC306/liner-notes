@@ -57,10 +57,12 @@ def find_artist(spotify_url, name):
             if relation.get("artist"):
                 return relation["artist"]["id"], "spotify link"
 
-    found = mb_get("/artist", {"query": 'artist:"' + name.replace('"', "") + '"', "limit": 5})
-    for artist in (found or {}).get("artists", []):
-        if artist.get("score") == 100 and artist.get("name", "").casefold() == name.casefold():
-            return artist["id"], "name"
+    # By name only when exactly one MusicBrainz artist has this name. With several
+    # (there are 8 bands called "Airbag") picking one is a guess, so take none.
+    found = mb_get("/artist", {"query": 'artist:"' + name.replace('"', "") + '"', "limit": 25})
+    same = [a for a in (found or {}).get("artists", []) if a.get("name", "").casefold() == name.casefold()]
+    if len(same) == 1:
+        return same[0]["id"], "name"
     return None, None
 
 

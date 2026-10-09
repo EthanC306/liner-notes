@@ -2,12 +2,13 @@
 // so a filter picked on one tab is still set on the next. It's saved in this
 // browser, and other open tabs of the app pick up changes too.
 //
-// Right now it holds genre groups (ids from GROUPS in genres.js, plus "none").
+// Right now it holds genre groups (ids from GROUPS in genres.js, plus "none" and
+// "features", which only the Artists tab has).
 // Hooked up: the genre chips on the Artists tab, the Overview tab and the Breakdown tab.
-import { GROUPS, NO_GENRE } from "./genres.js";
+import { GROUPS, NO_GENRE, FEATURES_ONLY } from "./genres.js";
 
 const STORE_KEY = "playlist-stat:filter";
-const KNOWN = new Set([...GROUPS, NO_GENRE].map(g => g.id));  // a saved group that no longer exists is dropped
+const KNOWN = new Set([...GROUPS, NO_GENRE, FEATURES_ONLY].map(g => g.id));  // a saved group that no longer exists is dropped
 const listeners = new Set();
 
 let groups = new Set();

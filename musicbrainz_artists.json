@@ -2290,27 +2290,10 @@
   },
   "3sXEXsaQfidL7HYPgK7knZ": {
     "name": "airbag",
-    "mbid": "fa8ec1e9-6020-4478-b939-cf5c80fec696",
-    "matched_by": "name",
-    "checked_at": "2026-10-09T01:56:25+00:00",
-    "type": "Group",
-    "country": "ES",
-    "area": "Spain",
-    "begin_area": "Estepona",
-    "begin": "1998-08-01",
-    "end": null,
-    "ended": false,
-    "disambiguation": "Spanish pop punk band",
-    "genres": [
-      "pop punk",
-      "power pop"
-    ],
-    "tags": [
-      "pop punk",
-      "power pop",
-      "2000s"
-    ],
-    "url": "https://musicbrainz.org/artist/fa8ec1e9-6020-4478-b939-cf5c80fec696"
+    "mbid": null,
+    "matched_by": null,
+    "note": "Not on MusicBrainz. A name match picked a Spanish pop punk band (fa8ec1e9-6020-4478-b939-cf5c80fec696); 8 artists share the name.",
+    "checked_at": "2026-10-09T01:56:25+00:00"
   },
   "3tlXnStJ1fFhdScmQeLpuG": {
     "name": "Brent Faiyaz",
