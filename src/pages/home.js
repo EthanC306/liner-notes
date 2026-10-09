@@ -1,9 +1,7 @@
-import { labelDisc } from "./label-disc.js";
-
 export function render(root, { songs, artists }) {
   root.innerHTML = `
-  <header class="hero">
-    <div class="disc-col">${labelDisc(`the ${songs.length} mix`, `${artists.length} artists`)}</div>
+  <header class="hero home-hero">
+    <p class="mix-title">the ${songs.length} mix</p>
     <div class="hero-text">
       <h1 tabindex="-1">Your Spotify playlist, laid out like a mix CD</h1>
       <p class="lede">This app reads the songs exported from your playlist and shows what it’s made of: who you play most, which albums keep coming back, and every track in order.</p>

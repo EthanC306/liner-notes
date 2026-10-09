@@ -777,3 +777,13 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
   .time-legend { font-size: .8rem; gap: .15rem .75rem; padding-block: .45rem; }
   .time-legend li { gap: .3rem; }
 }
+
+/* ---------- home: the mix's name in Sharpie, the information underneath ---------- */
+.home-hero { grid-template-columns: minmax(0, 1fr); gap: 1.75rem; align-items: start; }
+.mix-title {
+  font-family: var(--f-marker); font-size: clamp(3.5rem, 11vw, 7.5rem); line-height: .95; margin: 0;
+  transform: rotate(-3deg); transform-origin: left center; white-space: nowrap;
+}
+.home-hero .hero-text { max-width: 44rem; }
+.home-hero h1 { font-size: clamp(1.9rem, 4vw, 2.75rem); }
+@media (max-width: 760px) { .home-hero .hero-text { order: 0; } }
