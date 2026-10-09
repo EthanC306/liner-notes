@@ -5,6 +5,7 @@ import { GROUPS, NO_GENRE, FEATURES_ONLY, artistGroup, byCountOtherLast } from "
 import { esc, fmtDate } from "../util.js";
 import * as tierList from "./tiers.js";
 import { filter } from "../filter.js";
+import { decadeOf, decadeLabel } from "../decades.js";
 
 const STORE_KEY = "playlist-stat:artists-view";
 
@@ -26,6 +27,15 @@ export function render(root, playlist) {
   // only if they're the main artist on at least one song. Everyone else is "Features only".
   const mainArtists = new Set(playlist.songs.map(s => s.artists[0]).filter(Boolean));
   const tabGroup = a => (mainArtists.has(a.name) ? artistGroup(a) : FEATURES_ONLY);
+  // The decades an artist has a song in as the main artist; the decade filter uses these.
+  const decadesOf = new Map();
+  playlist.songs.forEach(s => {
+    const main = s.artists[0], d = decadeOf(s);
+    if (!main || d == null) return;
+    if (!decadesOf.has(main)) decadesOf.set(main, new Set());
+    decadesOf.get(main).add(d);
+  });
+  const allDecades = new Set([...decadesOf.values()].flatMap(set => [...set]));
   let view = { sort: "songs", q: "" };  // the genre filter is the shared one in filter.js
   let expanded = false;
   try { view.sort = JSON.parse(localStorage.getItem(STORE_KEY) || "{}").sort || view.sort; } catch { /* storage blocked */ }
@@ -51,6 +61,7 @@ export function render(root, playlist) {
     </div>
     <ul class="narrow-chips" aria-label="Filter by genre">
       ${groups.map(g => `<li><button type="button" class="narrow-chip removable" data-group="${g.id}">${esc(g.name)} <span class="chip-n">${g.count}</span></button></li>`).join("")}
+      <li class="decade-chips" id="decadeChips"></li>
     </ul>
 
     <p class="muted" id="artistCount" aria-live="polite"></p>
@@ -72,15 +83,22 @@ export function render(root, playlist) {
       b.setAttribute("aria-pressed", picked.has(b.dataset.group));
       b.title = picked.has(b.dataset.group) ? "Remove this filter" : "";
     });
+    // Decades are picked on the Breakdown tab; here they show as chips you can remove.
+    const pickedDecades = [...filter.decades()].filter(d => allDecades.has(d)).sort();
+    $("#decadeChips").innerHTML = pickedDecades.map(d =>
+      `<button type="button" class="narrow-chip removable" data-decade="${d}" aria-pressed="true" title="Remove this filter">${decadeLabel(d)} <span class="chip-n">${artists.filter(a => decadesOf.get(a.name)?.has(d)).length}</span></button>`).join("");
+    $("#decadeChips").hidden = !pickedDecades.length;
     const q = view.q.toLowerCase();
     const list = artists
-      .filter(a => (!picked.size || picked.has(tabGroup(a).id)) && (!q || a.name.toLowerCase().includes(q)))
+      .filter(a => (!picked.size || picked.has(tabGroup(a).id)) &&
+        (!pickedDecades.length || pickedDecades.some(d => decadesOf.get(a.name)?.has(d))) &&
+        (!q || a.name.toLowerCase().includes(q)))
       .sort(SORTS[view.sort].fn);
 
     const groupName = picked.size ? groups.filter(g => picked.has(g.id)).map(g => g.name).join(" or ") : null;
     $("#artistCount").textContent = list.length === artists.length
       ? `${artists.length} artists, ${SORTS[view.sort].label.toLowerCase()}.`
-      : `${list.length} of ${artists.length} artists${groupName ? ` in ${groupName}` : ""}${view.q ? ` matching “${view.q}”` : ""}.`;
+      : `${list.length} of ${artists.length} artists${groupName ? ` in ${groupName}` : ""}${pickedDecades.length ? ` with songs from the ${pickedDecades.map(decadeLabel).join(" or ")}` : ""}${view.q ? ` matching “${view.q}”` : ""}.`;
 
     // Collapsed, only one row shows: as many artists as the grid has columns right now.
     const columns = getComputedStyle($("#artistGrid")).gridTemplateColumns.split(" ").length || 1;
@@ -129,6 +147,8 @@ export function render(root, playlist) {
     if (sort) { view.sort = sort.dataset.sort; return draw(); }
     const group = e.target.closest("[data-group]");
     if (group) return filter.toggleGroup(group.dataset.group);  // the subscription below redraws
+    const decade = e.target.closest("[data-decade]");
+    if (decade) return filter.toggleDecade(Number(decade.dataset.decade));
     const card = e.target.closest("[data-artist]");
     if (card) openArtist(card.dataset.artist);
   });

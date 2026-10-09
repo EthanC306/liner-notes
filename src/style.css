@@ -640,3 +640,43 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
 /* The tilted headline overlaps the chip row's bottom edge; keep the chips on top so
    they stay clickable (the "Fewer" chip sat under the headline when the row wrapped). */
 .filter-chips { position: relative; z-index: 1; }
+
+/* ---------- decades (Breakdown) ---------- */
+.decade-section { display: grid; gap: 1rem; }
+.decade-section .genre-head p { margin: 0; }
+.decade-bars {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem;
+  grid-template-columns: repeat(auto-fit, minmax(2.6rem, 1fr)); align-items: end;
+  border-bottom: 1px solid var(--rule);
+}
+.decade-bar {
+  font: inherit; color: var(--ink); background: none; border: 0; padding: .25rem .1rem 0; width: 100%; cursor: pointer;
+  display: grid; grid-template-rows: auto 11rem auto; justify-items: center; gap: .3rem; border-radius: 4px 4px 0 0;
+}
+.decade-bar:hover:not(:disabled) { background: var(--field); }
+.decade-bar:disabled { cursor: default; color: var(--ink-2); }
+.db-num { font-weight: 600; font-variant-numeric: tabular-nums; font-size: .95rem; }
+.db-track { width: min(100%, 3.25rem); height: 100%; display: flex; align-items: flex-end; }
+.db-fill { display: block; width: 100%; min-height: 2px; background: var(--dye); border-radius: 4px 4px 0 0; transition: opacity .15s; }
+.decade-bar:disabled .db-fill { background: var(--rule); }
+.db-label { font-size: .9rem; font-weight: 600; padding-bottom: .4rem; color: var(--ink-2); }
+.decade-bar[aria-pressed="true"] { background: var(--field); box-shadow: inset 0 -3px 0 var(--dye); }
+.decade-bar[aria-pressed="true"] .db-label { color: var(--ink); }
+.decade-bar[data-dim] .db-fill { opacity: .3; }
+
+.decade-detail { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: .75rem; }
+.dd-item { background: var(--field); border: 1px solid var(--rule); border-radius: 4px; padding: .75rem .9rem; display: grid; gap: .4rem; align-content: start; }
+.dd-head { margin: 0; display: flex; align-items: baseline; gap: .5rem; }
+.dd-head strong { font-family: var(--f-marker); font-weight: 400; font-size: 1.4rem; color: var(--dye); }
+.dd-x {
+  margin-left: auto; font: inherit; font-weight: 700; cursor: pointer; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  border: 1px solid var(--rule); background: none; color: var(--ink-2); line-height: 1;
+}
+.dd-x:hover { color: var(--ink); border-color: var(--ink-2); }
+.dd-artists { margin: 0; padding-left: 1.3rem; display: grid; gap: .15rem; }
+.dd-artists li::marker { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .decade-bar { grid-template-rows: auto 8rem auto; }
+  .db-label { font-size: .78rem; }
+}
+.decade-chips { display: contents; }

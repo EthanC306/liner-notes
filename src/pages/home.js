@@ -21,7 +21,7 @@ export function render(root, { songs, artists }) {
       </li>
       <li>
         <a href="#breakdown">Breakdown</a><span class="status ready">Ready</span>
-        <p>Your songs split into genres like emo, rap and post-hardcore. Click a genre to see its songs.</p>
+        <p>Your songs split into genres like emo, rap and post-hardcore, and by decade. Click a genre or decade to filter every tab.</p>
       </li>
       <li>
         <a href="#artists">Artists</a><span class="status ready">Ready</span>
