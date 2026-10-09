@@ -1,0 +1,12 @@
+# Installed packages: recreate with `npm install`, and `python3 -m venv .venv && .venv/bin/pip install requests`
+node_modules/
+.venv/
+
+# Generated
+dist/
+__pycache__/
+*.pyc
+
+# Left behind by a stopped MusicBrainz run, or a write in progress
+*.partial.json
+*.tmp
