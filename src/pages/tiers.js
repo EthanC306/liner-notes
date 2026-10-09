@@ -23,6 +23,7 @@ function save(tiers) {
 
 const initials = name => name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
 
+// Drawn inside the Artists page, below the artist grid.
 export function render(root, { artists }) {
   const byName = new Map(artists.map(a => [a.name, a]));
   const tiers = load(new Set(byName.keys()));
@@ -31,11 +32,11 @@ export function render(root, { artists }) {
   let confirmingReset = false;
 
   root.innerHTML = `
-  <section class="tier-page">
+  <section class="tier-page" aria-labelledby="tierH">
     <header class="tier-head">
       <div>
-        <h1 tabindex="-1">Tier list</h1>
-        <p class="muted">Drag artists from the pile into a tier. You can also tap an artist and then tap a tier, or select one with Tab and press S, A, B, C, D or F. Your list is saved in this browser.</p>
+        <h2 id="tierH">Tier list</h2>
+        <p class="muted">Drag artists from the pile into a tier, or tap an artist and then a tier. With a keyboard, select one and press S, A, B, C, D or F. Saved in this browser.</p>
       </div>
       <button type="button" class="ghost-btn" id="resetTiers">Move everyone back</button>
     </header>

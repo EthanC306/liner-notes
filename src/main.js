@@ -2,8 +2,8 @@ import "./style.css";
 import { playlist } from "./data.js";
 import * as home from "./pages/home.js";
 import * as overview from "./pages/overview.js";
-import * as tiers from "./pages/tiers.js";
 import * as breakdown from "./pages/breakdown.js";
+import * as artistsPage from "./pages/artists.js";
 import { placeholder } from "./pages/placeholder.js";
 import { openArtist, closeArtist } from "./artist-sheet.js";
 
@@ -11,7 +11,7 @@ const pages = {
   home: { name: "Home", page: home },
   overview: { name: "Overview", page: overview },
   breakdown: { name: "Breakdown", page: breakdown },
-  tiers: { name: "Tier list", page: tiers },
+  artists: { name: "Artists", page: artistsPage },
   filter: { name: "Filter", page: placeholder("Filter", "It will let you narrow the playlist down to just the songs you want.") },
   recommend: { name: "Recommend", page: placeholder("Recommend", "It will suggest songs that fit what’s already on the playlist.") },
 };
@@ -27,6 +27,11 @@ function route() {
   if (location.hash.startsWith("#stats")) {
     // The Overview page used to be called Stats; keep old links working.
     history.replaceState(null, "", "#overview" + location.hash.slice("#stats".length));
+  }
+  if (location.hash.startsWith("#tiers")) {
+    // The tier list now lives on the Artists page.
+    history.replaceState(null, "", "#artists");
+    requestAnimationFrame(() => document.getElementById("tierListHere")?.scrollIntoView());
   }
   const [key, artist] = location.hash.slice(1).split("/");
   const current = pages[key] ? key : "home";

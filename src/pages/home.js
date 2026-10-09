@@ -24,8 +24,8 @@ export function render(root, { songs, artists }) {
         <p>Your songs split into genres like emo, rap and post-hardcore. Click a genre to see its songs.</p>
       </li>
       <li>
-        <a href="#tiers">Tier list</a><span class="status ready">Ready</span>
-        <p>Drag your artists into tiers from S to F. Your list is saved in this browser.</p>
+        <a href="#artists">Artists</a><span class="status ready">Ready</span>
+        <p>Every artist on the playlist with their photo, and a tier list to drag them into from S to F.</p>
       </li>
       <li>
         <a href="#filter">Filter</a><span class="status">Not built yet</span>
