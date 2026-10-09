@@ -1,11 +1,14 @@
 // Artists: every artist on the playlist as a photo tile, with search, sorting and
 // genre filters. A tile opens the artist popup.
 import { openArtist } from "../artist-sheet.js";
-import { GROUPS, NO_GENRE, FEATURES_ONLY, artistGroup, byCountOtherLast } from "../genres.js";
+import { GROUPS, NO_GENRE, FEATURES_ONLY, byCountOtherLast } from "../genres.js";
+import { filterSongs, stateFor, activeState, mainArtistsOf } from "../selection.js";
 import { esc, fmtDate } from "../util.js";
 import * as tierList from "./tiers.js";
 import { filter } from "../filter.js";
-import { decadeOf, decadeLabel } from "../decades.js";
+import { decadeLabel } from "../decades.js";
+import { monthLabel } from "../months.js";
+import { swatch } from "../genre-colors.js";
 
 const STORE_KEY = "playlist-stat:artists-view";
 
@@ -23,26 +26,27 @@ const initials = name => name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filte
 
 export function render(root, playlist) {
   const { artists } = playlist;
-  // Featured artists don't count toward a genre: an artist is in their genre's chip
-  // only if they're the main artist on at least one song. Everyone else is "Features only".
-  const mainArtists = new Set(playlist.songs.map(s => s.artists[0]).filter(Boolean));
-  const tabGroup = a => (mainArtists.has(a.name) ? artistGroup(a) : FEATURES_ONLY);
-  // The decades an artist has a song in as the main artist; the decade filter uses these.
-  const decadesOf = new Map();
-  playlist.songs.forEach(s => {
-    const main = s.artists[0], d = decadeOf(s);
-    if (!main || d == null) return;
-    if (!decadesOf.has(main)) decadesOf.set(main, new Set());
-    decadesOf.get(main).add(d);
-  });
-  const allDecades = new Set([...decadesOf.values()].flatMap(set => [...set]));
+  // The grid lists the main artists of the shared filter's songs; features don't count.
+  // Artists who are never a main artist are the "Features only" view, which is this
+  // tab's own toggle, not part of the shared filter.
+  const mains = mainArtistsOf(playlist.songs);
+  const featureOnly = artists.filter(a => !mains.has(a.name));
+  let featuresView = false;
+  // Main artists of the songs a filter state leaves, and feature-only artists on them.
+  const mainsFor = st => mainArtistsOf(filterSongs(playlist.songs, st));
+  const featuredFor = st => {
+    const onSongs = new Set(filterSongs(playlist.songs, st).flatMap(s => s.artists.slice(1)));
+    return featureOnly.filter(a => onSongs.has(a.name));
+  };
   let view = { sort: "songs", q: "" };  // the genre filter is the shared one in filter.js
   let expanded = false;
   try { view.sort = JSON.parse(localStorage.getItem(STORE_KEY) || "{}").sort || view.sort; } catch { /* storage blocked */ }
   if (!SORTS[view.sort]) view.sort = "songs";
 
-  const groups = [...GROUPS, NO_GENRE, FEATURES_ONLY]
-    .map(g => ({ ...g, count: artists.filter(a => tabGroup(a).id === g.id).length }))
+  // Genre chips in a fixed order (by how many main artists each has overall); their
+  // counts are redrawn from the shared filter.
+  const groups = [...GROUPS, NO_GENRE]
+    .map(g => ({ ...g, count: mainsFor(stateFor({}, "groups", g.id)).size }))
     .filter(g => g.count)
     .sort(byCountOtherLast);
 
@@ -60,8 +64,9 @@ export function render(root, playlist) {
       </div>
     </div>
     <ul class="narrow-chips" aria-label="Filter by genre">
-      ${groups.map(g => `<li><button type="button" class="narrow-chip removable" data-group="${g.id}">${esc(g.name)} <span class="chip-n">${g.count}</span></button></li>`).join("")}
+      ${groups.map(g => `<li><button type="button" class="narrow-chip removable" data-group="${g.id}">${swatch(g.id)}${esc(g.name)} <span class="chip-n"></span></button></li>`).join("")}
       <li class="decade-chips" id="decadeChips"></li>
+      ${featureOnly.length ? `<li><button type="button" class="narrow-chip removable view-chip" id="featuresView">${esc(FEATURES_ONLY.name)} <span class="chip-n"></span></button></li>` : ""}
     </ul>
 
     <p class="muted" id="artistCount" aria-live="polite"></p>
@@ -75,30 +80,47 @@ export function render(root, playlist) {
 
   function draw() {
     root.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === view.sort));
-    // Only groups that have a chip here count. A saved pick for a group that's since
-    // emptied (like "No genre found" once every artist has a genre) has no chip to
-    // undo it with, so it's ignored, the same as on the Overview and Breakdown.
-    const picked = new Set([...filter.groups()].filter(id => groups.some(g => g.id === id)));
+    // The shared filter, minus picks no song has (see activeState). Genre picks that have
+    // no chip here count too: every chip is redrawn below.
+    const state = activeState(playlist.songs, filter.state());
+    const picked = new Set(state.groups);
+    const pickedDecades = [...state.decades].sort();
+    const pickedMonths = [...state.months].sort();
+    // Each chip's count: main artists of the shared filter run for that chip's pick.
+    const chipCount = (type, value) => mainsFor(stateFor(state, type, value)).size;
     root.querySelectorAll("[data-group]").forEach(b => {
       b.setAttribute("aria-pressed", picked.has(b.dataset.group));
       b.title = picked.has(b.dataset.group) ? "Remove this filter" : "";
+      b.querySelector(".chip-n").textContent = chipCount("groups", b.dataset.group);
     });
-    // Decades are picked on the Breakdown tab; here they show as chips you can remove.
-    const pickedDecades = [...filter.decades()].filter(d => allDecades.has(d)).sort();
-    $("#decadeChips").innerHTML = pickedDecades.map(d =>
-      `<button type="button" class="narrow-chip removable" data-decade="${d}" aria-pressed="true" title="Remove this filter">${decadeLabel(d)} <span class="chip-n">${artists.filter(a => decadesOf.get(a.name)?.has(d)).length}</span></button>`).join("");
-    $("#decadeChips").hidden = !pickedDecades.length;
+    // Decades and months are picked on the Breakdown tab; here they show as chips you can remove.
+    $("#decadeChips").innerHTML = [
+      ...pickedDecades.map(d =>
+        `<button type="button" class="narrow-chip removable" data-decade="${d}" aria-pressed="true" title="Remove this filter">${decadeLabel(d)} <span class="chip-n">${chipCount("decades", d)}</span></button>`),
+      ...pickedMonths.map(m =>
+        `<button type="button" class="narrow-chip removable" data-month="${m}" aria-pressed="true" title="Remove this filter">${monthLabel(m, "short")} <span class="chip-n">${chipCount("months", m)}</span></button>`),
+    ].join("");
+    $("#decadeChips").hidden = !pickedDecades.length && !pickedMonths.length;
+    const featured = featuredFor(state);
+    const fv = $("#featuresView");
+    if (fv) {
+      fv.setAttribute("aria-pressed", featuresView);
+      fv.title = featuresView ? "Back to main artists" : "";
+      fv.querySelector(".chip-n").textContent = featured.length;
+    }
     const q = view.q.toLowerCase();
-    const list = artists
-      .filter(a => (!picked.size || picked.has(tabGroup(a).id)) &&
-        (!pickedDecades.length || pickedDecades.some(d => decadesOf.get(a.name)?.has(d))) &&
-        (!q || a.name.toLowerCase().includes(q)))
+    const shownArtists = featuresView ? featured : artists.filter(a => mainsFor(state).has(a.name));
+    const list = shownArtists
+      .filter(a => !q || a.name.toLowerCase().includes(q))
       .sort(SORTS[view.sort].fn);
 
     const groupName = picked.size ? groups.filter(g => picked.has(g.id)).map(g => g.name).join(" or ") : null;
-    $("#artistCount").textContent = list.length === artists.length
-      ? `${artists.length} artists, ${SORTS[view.sort].label.toLowerCase()}.`
-      : `${list.length} of ${artists.length} artists${groupName ? ` in ${groupName}` : ""}${pickedDecades.length ? ` with songs from the ${pickedDecades.map(decadeLabel).join(" or ")}` : ""}${view.q ? ` matching “${view.q}”` : ""}.`;
+    const filtering = picked.size || pickedDecades.length || pickedMonths.length || view.q;
+    $("#artistCount").textContent = featuresView
+      ? `${list.length} ${list.length === 1 ? "artist" : "artists"} who only appear as features${filtering ? ", on the filtered songs" : ""}.`
+      : !filtering
+      ? `${list.length} main artists, ${SORTS[view.sort].label.toLowerCase()}. ${featureOnly.length} more only appear as features.`
+      : `${list.length} of ${mains.size} main artists${groupName ? ` in ${groupName}` : ""}${pickedDecades.length ? ` with songs from the ${pickedDecades.map(decadeLabel).join(" or ")}` : ""}${pickedMonths.length ? `${pickedDecades.length ? "," : ""} with songs added in ${pickedMonths.map(m => monthLabel(m, "short")).join(" or ")}` : ""}${view.q ? ` matching “${view.q}”` : ""}.`;
 
     // Collapsed, only one row shows: as many artists as the grid has columns right now.
     const columns = getComputedStyle($("#artistGrid")).gridTemplateColumns.split(" ").length || 1;
@@ -145,10 +167,13 @@ export function render(root, playlist) {
     if (e.target.closest("#tierListHere")) return;  // the tier list handles its own clicks
     const sort = e.target.closest("[data-sort]");
     if (sort) { view.sort = sort.dataset.sort; return draw(); }
+    if (e.target.closest("#featuresView")) { featuresView = !featuresView; return draw(); }
     const group = e.target.closest("[data-group]");
     if (group) return filter.toggleGroup(group.dataset.group);  // the subscription below redraws
     const decade = e.target.closest("[data-decade]");
     if (decade) return filter.toggleDecade(Number(decade.dataset.decade));
+    const month = e.target.closest("[data-month]");
+    if (month) return filter.toggleMonth(month.dataset.month);
     const card = e.target.closest("[data-artist]");
     if (card) openArtist(card.dataset.artist);
   });

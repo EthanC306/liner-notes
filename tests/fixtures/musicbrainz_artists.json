@@ -1,0 +1,119 @@
+{
+  "asap": {
+    "name": "A$AP Rocky",
+    "mbid": "m-asap",
+    "genres": [
+      "hip hop",
+      "cloud rap"
+    ],
+    "tags": []
+  },
+  "imogen": {
+    "name": "Imogen Heap",
+    "mbid": "m-imogen",
+    "genres": [
+      "alternative rock",
+      "electropop"
+    ],
+    "tags": []
+  },
+  "clams": {
+    "name": "Clams Casino",
+    "mbid": "m-clams",
+    "genres": [
+      "alternative r&b",
+      "cloud rap"
+    ],
+    "tags": []
+  },
+  "mcs": {
+    "name": "Motion City Soundtrack",
+    "mbid": "m-mcs",
+    "genres": [
+      "pop punk",
+      "emo"
+    ],
+    "tags": []
+  },
+  "hh": {
+    "name": "Hawthorne Heights",
+    "mbid": "m-hh",
+    "genres": [
+      "emo",
+      "post-hardcore"
+    ],
+    "tags": []
+  },
+  "tyler": {
+    "name": "Tyler, The Creator",
+    "mbid": "m-tyler",
+    "genres": [
+      "hip hop"
+    ],
+    "tags": []
+  },
+  "kali": {
+    "name": "Kali Uchis",
+    "mbid": "m-kali",
+    "genres": [
+      "r&b"
+    ],
+    "tags": []
+  },
+  "beatles": {
+    "name": "The Beatles",
+    "mbid": "m-beatles",
+    "genres": [
+      "rock",
+      "pop"
+    ],
+    "tags": []
+  },
+  "ptv": {
+    "name": "Pierce The Veil",
+    "mbid": "m-ptv",
+    "genres": [
+      "post-hardcore"
+    ],
+    "tags": []
+  },
+  "peep": {
+    "name": "Lil Peep",
+    "mbid": "m-peep",
+    "genres": [
+      "cloud rap",
+      "emo"
+    ],
+    "tags": []
+  },
+  "tracy": {
+    "name": "Lil Tracy",
+    "mbid": "m-tracy",
+    "genres": [
+      "cloud rap"
+    ],
+    "tags": []
+  },
+  "pinegrove": {
+    "name": "Pinegrove",
+    "mbid": "m-pinegrove",
+    "genres": [
+      "indie rock",
+      "alternative country"
+    ],
+    "tags": []
+  },
+  "bmth": {
+    "name": "Bring Me The Horizon",
+    "mbid": "m-bmth",
+    "genres": [
+      "metalcore"
+    ],
+    "tags": []
+  },
+  "doan": {
+    "name": "doan",
+    "mbid": null,
+    "matched_by": null
+  }
+}

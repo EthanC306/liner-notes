@@ -17,6 +17,13 @@ const pages = {
 };
 
 const app = document.getElementById("app");
+
+// The top bar's height, for anything that sticks just below it (like the Breakdown legend).
+// It changes with the window: on phones the page links wrap onto their own line.
+const topbar = document.querySelector(".topbar");
+new ResizeObserver(() => {
+  document.documentElement.style.setProperty("--topbar-h", topbar.offsetHeight + "px");
+}).observe(topbar);
 const mixName = `The ${playlist.songs.length} Mix`;
 document.getElementById("wordmark").textContent = mixName;
 

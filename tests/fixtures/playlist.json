@@ -1,0 +1,514 @@
+{
+  "exported_at": "2026-10-09T00:00:00+00:00",
+  "playlist": {
+    "id": "fixture",
+    "name": "Fixture Mix",
+    "description": "",
+    "owner": "tests",
+    "url": null
+  },
+  "songs": [
+    {
+      "position": 1,
+      "title": "I Smoked Away My Brain (I'm God x Demons Mashup) (feat. Imogen Heap & Clams Casino)",
+      "artists": [
+        {
+          "name": "A$AP Rocky",
+          "id": "asap",
+          "url": "https://open.spotify.com/artist/asap"
+        },
+        {
+          "name": "Imogen Heap",
+          "id": "imogen",
+          "url": "https://open.spotify.com/artist/imogen"
+        },
+        {
+          "name": "Clams Casino",
+          "id": "clams",
+          "url": "https://open.spotify.com/artist/clams"
+        }
+      ],
+      "album": {
+        "name": "AT.LONG.LAST.A$AP",
+        "id": null,
+        "type": "album",
+        "release_date": "2015-05-26",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 245000,
+      "explicit": false,
+      "added_at": "2023-06-14T12:00:00Z",
+      "is_local": false,
+      "id": "smoked",
+      "url": "https://open.spotify.com/track/smoked"
+    },
+    {
+      "position": 2,
+      "title": "L$D",
+      "artists": [
+        {
+          "name": "A$AP Rocky",
+          "id": "asap",
+          "url": "https://open.spotify.com/artist/asap"
+        }
+      ],
+      "album": {
+        "name": "AT.LONG.LAST.A$AP",
+        "id": null,
+        "type": "album",
+        "release_date": "2015-05-26",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2024-07-10T12:00:00Z",
+      "is_local": false,
+      "id": "lsd",
+      "url": "https://open.spotify.com/track/lsd"
+    },
+    {
+      "position": 3,
+      "title": "Everything Is Alright",
+      "artists": [
+        {
+          "name": "Motion City Soundtrack",
+          "id": "mcs",
+          "url": "https://open.spotify.com/artist/mcs"
+        }
+      ],
+      "album": {
+        "name": "Commit This To Memory",
+        "id": null,
+        "type": "album",
+        "release_date": "2005-01-11",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2022-12-23T12:00:00Z",
+      "is_local": false,
+      "id": "mcs1",
+      "url": "https://open.spotify.com/track/mcs1"
+    },
+    {
+      "position": 4,
+      "title": "Everything Is Alright",
+      "artists": [
+        {
+          "name": "Motion City Soundtrack",
+          "id": "mcs",
+          "url": "https://open.spotify.com/artist/mcs"
+        }
+      ],
+      "album": {
+        "name": "Commit This To Memory",
+        "id": null,
+        "type": "album",
+        "release_date": "2005-01-11",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2022-11-05T12:00:00Z",
+      "is_local": false,
+      "id": "mcs1",
+      "url": "https://open.spotify.com/track/mcs1"
+    },
+    {
+      "position": 5,
+      "title": "Ohio Is for Lovers",
+      "artists": [
+        {
+          "name": "Hawthorne Heights",
+          "id": "hh",
+          "url": "https://open.spotify.com/artist/hh"
+        }
+      ],
+      "album": {
+        "name": "The Silence In Black and White",
+        "id": null,
+        "type": "album",
+        "release_date": "2004-06-08",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2023-02-13T12:00:00Z",
+      "is_local": false,
+      "id": "ohio-album",
+      "url": "https://open.spotify.com/track/ohio-album"
+    },
+    {
+      "position": 6,
+      "title": "Ohio Is For Lovers",
+      "artists": [
+        {
+          "name": "Hawthorne Heights",
+          "id": "hh",
+          "url": "https://open.spotify.com/artist/hh"
+        }
+      ],
+      "album": {
+        "name": "Ohio Is For Lovers",
+        "id": null,
+        "type": "single",
+        "release_date": "2004-01-01",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2025-03-03T12:00:00Z",
+      "is_local": false,
+      "id": "ohio-single",
+      "url": "https://open.spotify.com/track/ohio-single"
+    },
+    {
+      "position": 7,
+      "title": "Y2Mate.is - guardin - fake (prod. by canis major)-hgLryZHnh-w-160k-1654285075557",
+      "artists": [
+        {
+          "name": "",
+          "id": null,
+          "url": null
+        }
+      ],
+      "album": {
+        "name": "",
+        "id": null,
+        "type": null,
+        "release_date": null,
+        "release_date_precision": null,
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 199000,
+      "explicit": false,
+      "added_at": "2023-02-13T15:00:00Z",
+      "is_local": true,
+      "id": null,
+      "url": null
+    },
+    {
+      "position": 8,
+      "title": "See You Again (feat. Kali Uchis)",
+      "artists": [
+        {
+          "name": "Tyler, The Creator",
+          "id": "tyler",
+          "url": "https://open.spotify.com/artist/tyler"
+        },
+        {
+          "name": "Kali Uchis",
+          "id": "kali",
+          "url": "https://open.spotify.com/artist/kali"
+        }
+      ],
+      "album": {
+        "name": "Flower Boy",
+        "id": null,
+        "type": "album",
+        "release_date": "2017-07-21",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2025-09-03T12:00:00Z",
+      "is_local": false,
+      "id": "seeyou",
+      "url": "https://open.spotify.com/track/seeyou"
+    },
+    {
+      "position": 9,
+      "title": "Don't Let Me Down - Remastered 2009",
+      "artists": [
+        {
+          "name": "The Beatles",
+          "id": "beatles",
+          "url": "https://open.spotify.com/artist/beatles"
+        }
+      ],
+      "album": {
+        "name": "The Beatles 1967 - 1970 (Remastered 2009)",
+        "id": null,
+        "type": "compilation",
+        "release_date": "1973-04-02",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 215733,
+      "explicit": false,
+      "added_at": "2025-09-04T12:00:00Z",
+      "is_local": false,
+      "id": "dontlet",
+      "url": "https://open.spotify.com/track/dontlet"
+    },
+    {
+      "position": 10,
+      "title": "Bulls In The Bronx",
+      "artists": [
+        {
+          "name": "Pierce The Veil",
+          "id": "ptv",
+          "url": "https://open.spotify.com/artist/ptv"
+        }
+      ],
+      "album": {
+        "name": "Collide With The Sky",
+        "id": null,
+        "type": "album",
+        "release_date": "2012-07-17",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2025-10-05T12:00:00Z",
+      "is_local": false,
+      "id": "bulls",
+      "url": "https://open.spotify.com/track/bulls"
+    },
+    {
+      "position": 11,
+      "title": "white tee",
+      "artists": [
+        {
+          "name": "Lil Peep",
+          "id": "peep",
+          "url": "https://open.spotify.com/artist/peep"
+        },
+        {
+          "name": "Lil Tracy",
+          "id": "tracy",
+          "url": "https://open.spotify.com/artist/tracy"
+        }
+      ],
+      "album": {
+        "name": "crybaby",
+        "id": null,
+        "type": "album",
+        "release_date": "2016-06-10",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2025-10-06T12:00:00Z",
+      "is_local": false,
+      "id": "whitetee",
+      "url": "https://open.spotify.com/track/whitetee"
+    },
+    {
+      "position": 12,
+      "title": "Need",
+      "artists": [
+        {
+          "name": "Pinegrove",
+          "id": "pinegrove",
+          "url": "https://open.spotify.com/artist/pinegrove"
+        }
+      ],
+      "album": {
+        "name": "Cardinal",
+        "id": null,
+        "type": "album",
+        "release_date": "2016-02-12",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2025-09-20T12:00:00Z",
+      "is_local": false,
+      "id": "need",
+      "url": "https://open.spotify.com/track/need"
+    },
+    {
+      "position": 13,
+      "title": "Can You Feel My Heart",
+      "artists": [
+        {
+          "name": "Bring Me The Horizon",
+          "id": "bmth",
+          "url": "https://open.spotify.com/artist/bmth"
+        }
+      ],
+      "album": {
+        "name": "Sempiternal",
+        "id": null,
+        "type": "album",
+        "release_date": "2013-04-01",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2024-07-15T12:00:00Z",
+      "is_local": false,
+      "id": "heart",
+      "url": "https://open.spotify.com/track/heart"
+    },
+    {
+      "position": 14,
+      "title": "Preaching to the choir",
+      "artists": [
+        {
+          "name": "doan",
+          "id": "doan",
+          "url": "https://open.spotify.com/artist/doan"
+        }
+      ],
+      "album": {
+        "name": "Preaching to the choir",
+        "id": null,
+        "type": "single",
+        "release_date": "2024-06-14",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2026-09-06T12:00:00Z",
+      "is_local": false,
+      "id": "choir",
+      "url": "https://open.spotify.com/track/choir"
+    },
+    {
+      "position": 15,
+      "title": "High",
+      "artists": [
+        {
+          "name": "Kiss the Scientist",
+          "id": "kts",
+          "url": "https://open.spotify.com/artist/kts"
+        }
+      ],
+      "album": {
+        "name": "High",
+        "id": null,
+        "type": "single",
+        "release_date": "2025-08-01",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2026-09-08T12:00:00Z",
+      "is_local": false,
+      "id": "high",
+      "url": "https://open.spotify.com/track/high"
+    }
+  ],
+  "artists": {
+    "asap": {
+      "name": "A$AP Rocky",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/asap"
+    },
+    "imogen": {
+      "name": "Imogen Heap",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/imogen"
+    },
+    "clams": {
+      "name": "Clams Casino",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/clams"
+    },
+    "mcs": {
+      "name": "Motion City Soundtrack",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/mcs"
+    },
+    "hh": {
+      "name": "Hawthorne Heights",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/hh"
+    },
+    "tyler": {
+      "name": "Tyler, The Creator",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/tyler"
+    },
+    "kali": {
+      "name": "Kali Uchis",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/kali"
+    },
+    "beatles": {
+      "name": "The Beatles",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/beatles"
+    },
+    "ptv": {
+      "name": "Pierce The Veil",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/ptv"
+    },
+    "peep": {
+      "name": "Lil Peep",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/peep"
+    },
+    "tracy": {
+      "name": "Lil Tracy",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/tracy"
+    },
+    "pinegrove": {
+      "name": "Pinegrove",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/pinegrove"
+    },
+    "bmth": {
+      "name": "Bring Me The Horizon",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/bmth"
+    },
+    "doan": {
+      "name": "doan",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/doan"
+    },
+    "kts": {
+      "name": "Kiss the Scientist",
+      "genres": [],
+      "image": null,
+      "url": "https://open.spotify.com/artist/kts"
+    }
+  }
+}

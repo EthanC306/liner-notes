@@ -15,6 +15,10 @@
   --disc-dye: #2236a8;
   --disc-groove: rgba(30, 40, 70, .13);
 
+  /* genre colors (genre-colors.js): the six largest genres, then one grey for the rest */
+  --genre-1: #2a78d6; --genre-2: #eb6834; --genre-3: #1baf7a;
+  --genre-4: #eda100; --genre-5: #e87ba4; --genre-6: #4a3aa7; --genre-rest: #a3a8b0;
+
   --f-marker: "Permanent Marker", "Comic Sans MS", "Marker Felt", cursive;
   --f-text: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   color-scheme: light;
@@ -23,12 +27,16 @@
   :root:not([data-theme="light"]) {
     --paper: #16181d; --ink: #e5e7eb; --ink-2: #9ba2ae; --rule: #2d323b;
     --dye: #93a1ff; --hi: #5c5420; --hi-ink: #f4efc8; --field: #1e2128;
+    --genre-1: #3987e5; --genre-2: #d95926; --genre-3: #199e70;
+    --genre-4: #c98500; --genre-5: #d55181; --genre-6: #9085e9; --genre-rest: #5b616c;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #16181d; --ink: #e5e7eb; --ink-2: #9ba2ae; --rule: #2d323b;
   --dye: #93a1ff; --hi: #5c5420; --hi-ink: #f4efc8; --field: #1e2128;
+  --genre-1: #3987e5; --genre-2: #d95926; --genre-3: #199e70;
+  --genre-4: #c98500; --genre-5: #d55181; --genre-6: #9085e9; --genre-rest: #5b616c;
   color-scheme: dark;
 }
 
@@ -651,13 +659,20 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
 }
 .decade-bar {
   font: inherit; color: var(--ink); background: none; border: 0; padding: .25rem .1rem 0; width: 100%; cursor: pointer;
-  display: grid; grid-template-rows: auto 11rem auto; justify-items: center; gap: .3rem; border-radius: 4px 4px 0 0;
+  display: grid; grid-template-rows: 11rem auto; justify-items: center; gap: .3rem; border-radius: 4px 4px 0 0;
+  padding-top: 1.5rem;  /* room for the tallest bar's count */
 }
 .decade-bar:hover:not(:disabled) { background: var(--field); }
 .decade-bar:disabled { cursor: default; color: var(--ink-2); }
-.db-num { font-weight: 600; font-variant-numeric: tabular-nums; font-size: .95rem; }
-.db-track { width: min(100%, 3.25rem); height: 100%; display: flex; align-items: flex-end; }
-.db-fill { display: block; width: 100%; min-height: 2px; background: var(--dye); border-radius: 4px 4px 0 0; transition: opacity .15s; }
+/* Both time charts: each count sits right on top of its own bar. The count is positioned
+   over the bar (not stacked with it), so every bar keeps the same scale: --h is the share
+   of the tallest bar. */
+.db-track { position: relative; width: min(100%, 3.25rem); height: 100%; display: flex; align-items: flex-end; }
+.db-fill { display: block; width: 100%; height: var(--h); min-height: 2px; background: var(--dye); border-radius: 4px 4px 0 0; transition: opacity .15s; }
+.db-num {
+  position: absolute; left: 50%; bottom: max(var(--h), 2px); transform: translateX(-50%); padding-bottom: .15rem;  /* 2px: a bar's minimum height */
+  font-weight: 600; font-variant-numeric: tabular-nums; font-size: .95rem; line-height: 1.1; white-space: nowrap;
+}
 .decade-bar:disabled .db-fill { background: var(--rule); }
 .db-label { font-size: .9rem; font-weight: 600; padding-bottom: .4rem; color: var(--ink-2); }
 .decade-bar[aria-pressed="true"] { background: var(--field); box-shadow: inset 0 -3px 0 var(--dye); }
@@ -676,7 +691,89 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
 .dd-artists { margin: 0; padding-left: 1.3rem; display: grid; gap: .15rem; }
 .dd-artists li::marker { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) {
-  .decade-bar { grid-template-rows: auto 8rem auto; }
+  .decade-bar { grid-template-rows: 8rem auto; }
   .db-label { font-size: .78rem; }
 }
 .decade-chips { display: contents; }
+
+/* ---------- when you added it (Breakdown) ---------- */
+/* Same bars as the decades chart, one per month, all fitting across the width with a
+   thin 2px gap between neighbours so each month stands out. */
+.month-chart#monthChart { container-type: inline-size; }
+.month-bars { grid-template-columns: repeat(var(--months, 12), minmax(0, 1fr)); gap: 2px; position: relative; padding-bottom: 1.35rem; }
+
+/* Year spans sit behind the bars on the same columns. A thin, faint line runs the height
+   of the chart at the start of each year (centered in the 2px gap before January), and
+   each year's name sits once underneath, below the month labels. */
+.month-plot { position: relative; }
+.year-bands {
+  position: absolute; inset: 0; display: grid; gap: 2px;
+  grid-template-columns: repeat(var(--months, 12), minmax(0, 1fr));
+}
+.year-band { position: relative; min-width: 0; }
+.year-band.year-start::before {
+  content: ""; position: absolute; top: 0; bottom: 1.35rem; left: -1.5px; width: 1px;
+  background: color-mix(in srgb, var(--ink) 20%, transparent);
+}
+.band-year {
+  position: absolute; left: 0; right: 0; bottom: .2rem; text-align: center;
+  font-size: .74rem; font-weight: 700; color: var(--ink); white-space: nowrap;
+}
+.month-bars > li, .month-bar { min-width: 0; }  /* columns may be narrower than their labels */
+.month-bar { grid-template-columns: minmax(0, 1fr); }  /* and a label mustn't widen its own bar */
+.month-bar { grid-template-rows: 18rem auto; padding: 1.2rem 0 0; border-radius: 2px 2px 0 0; background: none; }
+.month-bar .db-track { width: 100%; }
+.month-bar .db-fill { border-radius: 2px 2px 0 0; }
+.month-bar .db-num { font-size: .68rem; }
+/* Labels can be wider than their column; they spill over the unlabelled neighbours. */
+.month-bar .db-label { overflow: visible; white-space: nowrap; }
+/* Counts need about 20px of column; narrower than that they'd run together, so they're
+   left to the hover label and the month panel. */
+@container (max-width: 62rem) { .month-bar .db-num { display: none; } }
+/* Months under 5 songs keep their count for hover, so short bars don't crowd the chart. */
+.month-bar .db-num-small { display: none; }
+/* Hovering or focusing a month shows its count, whatever its size or the screen width. */
+.month-bar:is(:hover, :focus-visible) .db-num { display: block; z-index: 1; }
+/* On a phone the month names don't fit either: just the years. */
+@container (max-width: 34rem) { .month-bar .mb-mon { display: none; } }
+.month-bar .db-label { font-size: .74rem; display: grid; justify-items: center; align-content: start; line-height: 1.15; min-height: 1.2rem; }  /* room for the year line on every bar, so bars line up */
+@media (max-width: 640px) { .month-bar { grid-template-rows: 14rem auto; } }
+/* Month cards need room for a long month name on one line. */
+#monthDetail { grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr)); }
+#monthDetail .dd-head strong { white-space: nowrap; }
+
+/* ---------- genre colors ---------- */
+.swatch { display: inline-block; width: .7em; height: .7em; border-radius: 2px; flex-shrink: 0; vertical-align: baseline; }
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .3rem 1.1rem; font-size: .95rem; color: var(--ink-2); }
+.legend li { display: inline-flex; align-items: center; gap: .4rem; }
+
+/* Timeline bars stacked by genre, largest genre at the bottom. A 2px gap in the page
+   color separates the segments; only the top of the bar is rounded. */
+.db-stack { display: flex; flex-direction: column-reverse; gap: 2px; background: none !important; overflow: hidden; }
+.db-stack .seg { display: block; min-height: 2px; flex-basis: 0; }
+.db-stack:empty { background: var(--rule) !important; }
+.decade-bar[data-dim] .db-stack { opacity: .3; }
+.month-chart { position: relative; min-width: 0; }  /* lets the bars scroll inside it instead of widening the page */
+.chart-tip {
+  position: absolute; z-index: 2; pointer-events: none; transform: translate(-50%, calc(-100% - 10px));
+  background: var(--ink); color: var(--paper); font-size: .9rem; line-height: 1.25; padding: .3rem .55rem; border-radius: 3px;
+  white-space: nowrap; max-width: min(28rem, 90vw); overflow: hidden; text-overflow: ellipsis;
+}
+/* On a chip the color square needs a light ring to show on the filled (picked) background. */
+.narrow-chip .swatch, .fchip .swatch { margin-right: .35rem; box-shadow: 0 0 0 1.5px var(--paper); }
+.fchip .swatch { margin-right: 0; }
+/* One legend for both time charts. It sticks just under the top bar while either chart
+   is on screen; .time-charts holds the legend and both charts, so it lets go after the
+   timeline instead of following you down the page. */
+.time-charts { display: grid; gap: 2rem; }
+.time-legend {
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h, 0px)); z-index: 3;
+  background: var(--paper); border-block: 1px solid var(--rule); padding-block: .65rem;
+  margin-bottom: -1rem;
+}
+.chart-tip { z-index: 4; }  /* hover labels show over the legend when a bar reaches it */
+/* On phones the stuck legend takes less of the screen. */
+@media (max-width: 640px) {
+  .time-legend { font-size: .8rem; gap: .15rem .75rem; padding-block: .45rem; }
+  .time-legend li { gap: .3rem; }
+}

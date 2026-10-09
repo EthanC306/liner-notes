@@ -1,34 +1,32 @@
 import { esc, fmtLength, fmtRelease } from "../util.js";
 import { openArtist } from "../artist-sheet.js";
 import { filter } from "../filter.js";
-import { artistByName, summarize } from "../data.js";
-import { GROUPS, NO_GENRE, songGroup, byCountOtherLast } from "../genres.js";
-import { decadeOf, decadeLabel } from "../decades.js";
+import { summarize } from "../data.js";
+import { GROUPS, NO_GENRE, byCountOtherLast } from "../genres.js";
+import { filterSongs, countFor, activeState } from "../selection.js";
+import { decadeLabel } from "../decades.js";
+import { monthLabel } from "../months.js";
+import { swatch } from "../genre-colors.js";
 
 const NS = "http://www.w3.org/2000/svg";
 const ALL_GROUPS = [...GROUPS, NO_GENRE];
 
-// The Overview follows the shared filter: with genres picked, everything on the
-// page (disc, count, facts, albums, superlatives, tracklist) covers only those songs.
+// The Overview follows the shared filter: with genres, decades or months picked, everything
+// on the page (disc, count, facts, albums, superlatives, tracklist) covers only those songs.
 export function render(root, playlist) {
-  // Each song's group comes from its main artist; featured artists don't count.
-  const groupOfSong = new Map(playlist.songs.map(s => [s, songGroup(s, artistByName).id]));
-  const songCount = id => playlist.songs.filter(s => groupOfSong.get(s) === id).length;
-  const decadeCount = d => playlist.songs.filter(s => decadeOf(s) === d).length;
   let chipsOpen = false;  // whether every filter chip shows, or just the first three
 
   function show() {
-    // A picked group with no songs here (like Other, whose artists are only ever
-    // featured) is left out: no chip, and it doesn't filter anything.
-    const picked = new Set([...filter.groups()].filter(id => songCount(id) > 0));
-    const pickedDecades = [...filter.decades()].filter(d => decadeCount(d) > 0).sort();
-    // A song has to match a picked genre and a picked decade (when there are any).
-    const songs = playlist.songs.filter(s =>
-      (!picked.size || picked.has(groupOfSong.get(s))) &&
-      (!pickedDecades.length || pickedDecades.includes(decadeOf(s))));
+    // The shared filter's songs. Picks no song has (like Other, whose artists are only
+    // ever featured) are dropped first: no chip, and they don't filter anything.
+    const state = activeState(playlist.songs, filter.state());
+    const songs = filterSongs(playlist.songs, state);
+    // Each chip's count is the shared filter run for that pick.
+    const count = (type, value) => countFor(playlist.songs, state, type, value);
     const chips = [
-      ...ALL_GROUPS.filter(g => picked.has(g.id)).map(g => ({ ...g, count: songCount(g.id), remove: `data-unfilter="${g.id}"` })).sort(byCountOtherLast),
-      ...pickedDecades.map(d => ({ id: "d" + d, name: decadeLabel(d), count: decadeCount(d), remove: `data-undecade="${d}"` })),
+      ...ALL_GROUPS.filter(g => state.groups.includes(g.id)).map(g => ({ ...g, count: count("groups", g.id), remove: `data-unfilter="${g.id}"`, mark: swatch(g.id) })).sort(byCountOtherLast),
+      ...[...state.decades].sort().map(d => ({ id: "d" + d, name: decadeLabel(d), count: count("decades", d), remove: `data-undecade="${d}"` })),
+      ...[...state.months].sort().map(m => ({ id: "m" + m, name: monthLabel(m, "short"), count: count("months", m), remove: `data-unmonth="${m}"` })),
     ];
     // Three chips fit beside +N and Clear all; on a phone only two do.
     const visible = matchMedia("(max-width: 480px)").matches ? 2 : 3;
@@ -65,7 +63,7 @@ function draw(root, { songs, artists, albums, onceCount, rips }, { chips, total,
     <div class="front">
       ${filtered ? `<ul class="filter-chips${chipsOpen ? " open" : ""}" aria-label="Filtered to">
         ${/* the longest name gives up its space first, so short ones like "Metal" stay whole */""}
-        ${(chipsOpen ? chips : chips.slice(0, visible)).map((g, i, shown) => `<li style="flex-shrink:${g.name.length === Math.max(...shown.map(x => x.name.length)) ? 1000 : 1}"><button type="button" class="fchip" ${g.remove} aria-label="Remove the ${esc(g.name)} filter" title="${esc(g.name)}"><span class="fchip-name">${esc(g.name)}</span> <span class="fchip-n">${g.count}</span><span class="fchip-x" aria-hidden="true">×</span></button></li>`).join("")}
+        ${(chipsOpen ? chips : chips.slice(0, visible)).map((g, i, shown) => `<li style="flex-shrink:${g.name.length === Math.max(...shown.map(x => x.name.length)) ? 1000 : 1}"><button type="button" class="fchip" ${g.remove} aria-label="Remove the ${esc(g.name)} filter" title="${esc(g.name)}">${g.mark || ""}<span class="fchip-name">${esc(g.name)}</span> <span class="fchip-n">${g.count}</span><span class="fchip-x" aria-hidden="true">×</span></button></li>`).join("")}
         ${chips.length > visible ? `<li><button type="button" class="fchip-more" data-more-chips aria-expanded="${chipsOpen}">${chipsOpen ? "Fewer" : `+${chips.length - visible}`}</button></li>` : ""}
         ${chips.length > 1 ? `<li><button type="button" class="fchip-clear" data-clear-filter>Clear all</button></li>` : ""}
       </ul>` : ""}
@@ -256,6 +254,8 @@ function draw(root, { songs, artists, albums, onceCount, rips }, { chips, total,
   // Any artist name on this page opens that artist.
   root.addEventListener("click", e => {
     if (e.target.closest("[data-clear-filter]")) return filter.clear();
+    const offMonth = e.target.closest("[data-unmonth]");
+    if (offMonth) return filter.toggleMonth(offMonth.dataset.unmonth);
     const offDecade = e.target.closest("[data-undecade]");
     if (offDecade) return filter.toggleDecade(Number(offDecade.dataset.undecade));
     const off = e.target.closest("[data-unfilter]");

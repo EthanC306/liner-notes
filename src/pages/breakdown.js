@@ -1,31 +1,44 @@
 // Breakdown: every song sorted into one broad genre group, as bars you can click
-// to filter, then a decades chart, then specific genres to narrow it down further.
+// to filter, then a decades chart, a timeline of when songs were added, then specific
+// genres to narrow it down further.
 // Genres and decades are the shared filter, so picks here carry to the other tabs.
-import { artistByName } from "../data.js";
-import { GROUPS, NO_GENRE, songGroup, artistGenres, byCountOtherLast } from "../genres.js";
+import { GROUPS, NO_GENRE, byCountOtherLast } from "../genres.js";
 import { openArtist } from "../artist-sheet.js";
 import { esc } from "../util.js";
 import { filter } from "../filter.js";
-import { decadeOf, decadeLabel } from "../decades.js";
+import { filterSongs, countFor, stateFor, activeState, emptyState } from "../selection.js";
+import { decadeLabel } from "../decades.js";
+import { monthLabel } from "../months.js";
+import { TOP_GENRES, genreColor, genreRank, isTopGenre, swatch } from "../genre-colors.js";
 
 export function render(root, { songs }) {
-  // Each song's group, and every specific genre of every artist on it.
+  // Each song with its genre group (from its main artist, set in build.js), decade, month,
+  // and every specific genre of every artist on it.
+  const groupById = new Map([...GROUPS, NO_GENRE].map(g => [g.id, g]));
   const rows = songs.map(s => ({
     song: s,
-    group: songGroup(s, artistByName),
-    decade: decadeOf(s),
-    genres: [...new Set(s.artists.flatMap(n => artistGenres(artistByName(n))))],
+    group: groupById.get(s.groupId),
+    decade: s.decade,
+    month: s.month,
+    genres: s.genres,
   }));
+  const rowOf = new Map(rows.map(r => [r.song, r]));
+  // The genre chart lists every group with songs, biggest first; the order stays put
+  // while counts change with the other filters.
   const groups = [...GROUPS, NO_GENRE]
-    .map(g => ({ ...g, count: rows.filter(r => r.group.id === g.id).length }))
+    .map(g => ({ ...g, count: songs.filter(s => s.groupId === g.id).length }))
     .filter(g => g.count)
     .sort(byCountOtherLast);
-  const max = Math.max(...groups.map(g => g.count));
 
-  // Genre groups come from the shared filter, so a pick here carries to the other tabs.
-  // A picked group with no songs (like Other) is left out, the same as on the Overview.
+  // Everything here comes from the shared filter (selection.js): the filtered songs, and
+  // each chip and bar's count from running that filter for its selection.
+  let state = emptyState();
   let picked = new Set();
-  const readFilter = () => { picked = new Set([...filter.groups()].filter(id => groups.some(g => g.id === id))); };
+  const readFilter = () => {
+    state = activeState(songs, filter.state());
+    picked = new Set(state.groups);
+  };
+  const rowsFor = st => filterSongs(songs, st).map(s => rowOf.get(s));
   const narrowed = new Set(); // specific genres
 
   // Every decade from the earliest song to the latest, empty ones included, so the
@@ -34,7 +47,25 @@ export function render(root, { songs }) {
   const decades = [];
   for (let d = Math.min(...years); d <= Math.max(...years); d += 10) decades.push(d);
   let pickedDecades = new Set();
-  const readDecades = () => { pickedDecades = new Set([...filter.decades()].filter(d => rows.some(r => r.decade === d))); };
+
+  // Every month from the first song added to the last, empty ones included so gaps show.
+  // The axis covers all songs, so it stays put while the filters change the bar heights.
+  const addedMonths = rows.map(r => r.month).filter(Boolean).sort();
+  const months = [];
+  if (addedMonths.length) {
+    let [y, m] = addedMonths[0].split("-").map(Number);
+    const last = addedMonths[addedMonths.length - 1];
+    for (;;) {
+      const key = `${y}-${String(m).padStart(2, "0")}`;
+      months.push(key);
+      if (key === last) break;
+      if (++m > 12) { m = 1; y++; }
+    }
+  }
+  const monthName = monthLabel;
+  let pickedMonths = new Set();  // from the shared filter
+  const readMonths = () => { pickedMonths = new Set(state.months); };
+  const readDecades = () => { pickedDecades = new Set(state.decades); };
 
   root.innerHTML = `
   <section class="breakdown">
@@ -51,14 +82,41 @@ export function render(root, { songs }) {
       <ul class="genre-bars" id="genreBars"></ul>
     </section>
 
+    <div class="time-charts">
+    <ul class="legend time-legend" aria-label="Genre colors for the two charts below">
+      ${TOP_GENRES.map(g => `<li>${swatch(g.id)}${esc(g.name)}</li>`).join("")}
+      <li>${swatch("rest")}Other genres</li>
+    </ul>
+
     <section class="decade-section" aria-labelledby="decadeH">
       <div class="genre-head">
-        <h2 id="decadeH">Decades</h2>
+        <h2 id="decadeH">When the music is from</h2>
         <p class="muted" id="decadeNote"></p>
       </div>
-      <ul class="decade-bars" id="decadeBars"></ul>
+      <div class="month-chart" id="decadeChart">
+        <ul class="decade-bars" id="decadeBars"></ul>
+        <div class="chart-tip" id="decadeTip" hidden></div>
+      </div>
       <div class="decade-detail" id="decadeDetail" hidden></div>
     </section>
+
+    <section class="decade-section" aria-labelledby="addedH">
+      <div class="genre-head">
+        <h2 id="addedH">When you added it</h2>
+        <p class="muted" id="addedNote"></p>
+      </div>
+      <div class="month-chart" id="monthChart">
+        <div class="month-scroll" id="monthScroll">
+          <div class="month-plot" id="monthPlot">
+            <div class="year-bands" id="yearBands" aria-hidden="true"></div>
+            <ul class="decade-bars month-bars" id="monthBars"></ul>
+          </div>
+        </div>
+        <div class="chart-tip" id="monthTip" hidden></div>
+      </div>
+      <div class="decade-detail" id="monthDetail" hidden></div>
+    </section>
+    </div>
 
     <section class="genre-section" aria-label="Songs">
 
@@ -77,31 +135,36 @@ export function render(root, { songs }) {
   const $ = s => root.querySelector(s);
 
   function matching() {
-    return rows.filter(r =>
-      (!picked.size || picked.has(r.group.id)) &&
-      (!pickedDecades.size || pickedDecades.has(r.decade)) &&
-      (!narrowed.size || r.genres.some(g => narrowed.has(g))));
+    return rowsFor(state).filter(r => !narrowed.size || r.genres.some(g => narrowed.has(g)));
   }
 
   function draw() {
     readFilter();
     readDecades();
+    readMonths();
     drawDecades();
+    drawMonths();
     const any = picked.size > 0;
+    // Each bar: the shared filter run with just this genre (so picking genres never
+    // shrinks this chart, but decade and month picks do).
+    const genreCounts = new Map(groups.map(g => [g.id, countFor(songs, state, "groups", g.id)]));
+    const max = Math.max(1, ...genreCounts.values());
+    const base = filterSongs(songs, { ...state, groups: [] }).length || 1;
     $("#genreBars").innerHTML = groups.map(g => {
-      const pct = Math.round((g.count / songs.length) * 100);
+      const n = genreCounts.get(g.id);
+      const pct = Math.round((n / base) * 100);
       return `<li>
         <button type="button" class="genre-bar${g.id === "none" ? " is-none" : ""}" data-group="${g.id}"
           aria-pressed="${picked.has(g.id)}"${any && !picked.has(g.id) ? ' data-dim=""' : ""}>
           <span class="gb-name">${esc(g.name)}</span>
-          <span class="gb-track"><span class="gb-fill" style="width:${(g.count / max) * 100}%"></span></span>
-          <span class="gb-num">${g.count} <span class="muted">(${pct}%)</span></span>
+          <span class="gb-track"><span class="gb-fill" style="width:${(n / max) * 100}%; background:${genreColor(g.id)}"></span></span>
+          <span class="gb-num">${n} <span class="muted">(${pct}%)</span></span>
         </button>
       </li>`;
     }).join("");
 
-    // Specific genres among the songs the group filter leaves, most common first.
-    const pool = rows.filter(r => (!picked.size || picked.has(r.group.id)) && (!pickedDecades.size || pickedDecades.has(r.decade)));
+    // Specific genres among the shared filter's songs, most common first.
+    const pool = rowsFor(state);
     const counts = new Map();
     pool.forEach(r => r.genres.forEach(g => counts.set(g, (counts.get(g) || 0) + 1)));
     const chips = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 24);
@@ -111,12 +174,13 @@ export function render(root, { songs }) {
     $("#narrow").hidden = chips.length === 0;
 
     const list = matching();
-    $("#clearGenres").hidden = !picked.size && !narrowed.size && !pickedDecades.size;
+    $("#clearGenres").hidden = !picked.size && !narrowed.size && !pickedDecades.size && !pickedMonths.size;
+    const monthNames = [...pickedMonths].sort().map(m => monthName(m, "short"));
     const names = [...picked].map(id => groups.find(g => g.id === id).name);
     const decadeNames = [...pickedDecades].sort().map(decadeLabel);
-    $("#genreSummary").textContent = !picked.size && !narrowed.size && !pickedDecades.size
-      ? `All ${songs.length} songs. Pick a genre or decade above to filter.`
-      : `${list.length} of ${songs.length} songs${names.length ? ` in ${names.join(" or ")}` : ""}${decadeNames.length ? ` from the ${decadeNames.join(" or ")}` : ""}${narrowed.size ? `, tagged ${[...narrowed].join(" or ")}` : ""}.`;
+    $("#genreSummary").textContent = !picked.size && !narrowed.size && !pickedDecades.size && !pickedMonths.size
+      ? `All ${songs.length} songs. Pick a genre, decade or month above to filter.`
+      : `${list.length} of ${songs.length} songs${names.length ? ` in ${names.join(" or ")}` : ""}${decadeNames.length ? ` from the ${decadeNames.join(" or ")}` : ""}${monthNames.length ? `, added in ${monthNames.join(" or ")}` : ""}${narrowed.size ? `, tagged ${[...narrowed].join(" or ")}` : ""}.`;
     $("#genreSongs").innerHTML = list.map(({ song: s, group, genres }) => `
       <li>
         <span class="num">${s.n}</span>
@@ -130,23 +194,29 @@ export function render(root, { songs }) {
 
   // ---------- decades ----------
   function drawDecades() {
-    // Bar heights count the songs the genre filter leaves, so picking Metal shows Metal's decades.
-    const pool = rows.filter(r => !picked.size || picked.has(r.group.id));
-    const counts = new Map(decades.map(d => [d, pool.filter(r => r.decade === d).length]));
+    // Bar heights count the songs the genre and month picks leave, so picking Metal
+    // shows Metal's decades, and picking a month shows which decades it added.
+    // Each bar is the shared filter run for that decade; its stack splits those songs by genre.
+    const pool = rowsFor({ ...state, decades: [] });
+    const perDecade = new Map(decades.map(d => [d, rowsFor(stateFor(state, "decades", d))]));
+    const counts = new Map(decades.map(d => [d, perDecade.get(d).length]));
+    const byGenre = new Map(decades.map(d => [d, tallyGenres(perDecade.get(d))]));
     const top = Math.max(1, ...counts.values());
     const anyPicked = pickedDecades.size > 0;
     const undated = pool.filter(r => r.decade == null).length;
     const names = [...picked].map(id => groups.find(g => g.id === id).name);
-    $("#decadeNote").textContent = `By the year each song first came out${names.length ? `, in ${names.join(" or ")}` : ""}.${undated ? ` ${undated} ${undated === 1 ? "song has" : "songs have"} no date.` : ""}`;
+    const addedIn = [...pickedMonths].sort().map(m => monthName(m, "short"));
+    $("#decadeNote").textContent = `By the year each song first came out${names.length ? `, in ${names.join(" or ")}` : ""}${addedIn.length ? `, added in ${addedIn.join(" or ")}` : ""}.${undated ? ` ${undated} ${undated === 1 ? "song has" : "songs have"} no date.` : ""}`;
 
     $("#decadeBars").innerHTML = decades.map(d => {
       const n = counts.get(d);
       return `<li>
-        <button type="button" class="decade-bar" data-decade="${d}" aria-pressed="${pickedDecades.has(d)}"
+        <button type="button" class="decade-bar" data-decade="${d}" data-name="${decadeLabel(d)}" aria-pressed="${pickedDecades.has(d)}"
           ${anyPicked && !pickedDecades.has(d) ? "data-dim" : ""} ${n || pickedDecades.has(d) ? "" : "disabled"}
-          aria-label="${decadeLabel(d)}: ${n} ${n === 1 ? "song" : "songs"}">${/* an empty decade can't be picked, but a picked one stays clickable to unpick */""}
-          <span class="db-num">${n}</span>
-          <span class="db-track"><span class="db-fill" style="height:${(n / top) * 100}%"></span></span>
+          aria-label="${decadeLabel(d)}: ${n} ${n === 1 ? "song" : "songs"}${n ? `: ${spoken(byGenre.get(d))}` : ""}">${/* an empty decade can't be picked, but a picked one stays clickable to unpick */""}
+          <span class="db-track" style="--h:${(n / top) * 100}%">
+            <span class="db-fill db-stack">${stack(byGenre.get(d))}</span>${n ? `<span class="db-num">${n}</span>` : ""}
+          </span>
           <span class="db-label">${decadeLabel(d)}</span>
         </button>
       </li>`;
@@ -156,7 +226,7 @@ export function render(root, { songs }) {
     const detail = $("#decadeDetail");
     detail.hidden = !anyPicked;
     detail.innerHTML = [...pickedDecades].sort().map(d => {
-      const inDecade = pool.filter(r => r.decade === d);
+      const inDecade = perDecade.get(d) || [];
       const byArtist = new Map();
       inDecade.forEach(r => { const a = r.song.artists[0]; if (a) byArtist.set(a, (byArtist.get(a) || 0) + 1); });
       const top = [...byArtist].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 5);
@@ -168,7 +238,112 @@ export function render(root, { songs }) {
     }).join("");
   }
 
+  // A bar's songs counted by genre group, for its stack.
+  function tallyGenres(list) {
+    const m = new Map();
+    list.forEach(r => m.set(r.group.id, (m.get(r.group.id) || 0) + 1));
+    return m;
+  }
+
+  // ---------- when you added it ----------
+  const groupName = id => groups.find(g => g.id === id)?.name || id;
+  // A month's genres in stacking order: the six largest genres by size, bottom first,
+  // then every other genre together as one grey segment on top.
+  function segments(genreCounts) {
+    const top = [...genreCounts].filter(([id]) => isTopGenre(id)).sort((a, b) => genreRank(a[0]) - genreRank(b[0]));
+    const rest = [...genreCounts].filter(([id]) => !isTopGenre(id)).sort((a, b) => b[1] - a[1]);
+    const segs = top.map(([id, n]) => ({ id, n, label: `${groupName(id)}: ${n}` }));
+    const restN = rest.reduce((t, [, n]) => t + n, 0);
+    if (restN) segs.push({ id: "rest", n: restN, label: `Other genres: ${restN} (${rest.map(([id, n]) => `${groupName(id)} ${n}`).join(", ")})` });
+    return segs;
+  }
+  const stack = genreCounts => {
+    const segs = segments(genreCounts), total = segs.reduce((t, x) => t + x.n, 0);
+    return segs.map(x => `<span class="seg" style="flex-grow:${x.n}; background:${genreColor(x.id)}" data-tip="${esc(x.label)}"></span>`).join("") || "";
+  };
+  const spoken = genreCounts => segments(genreCounts).map(x => x.label.replace(/ \(.*\)$/, "")).join(", ");
+
+  // The hover label for a genre segment, on both time charts.
+  function hoverLabels(chart, area, tip) {
+    area.addEventListener("pointermove", e => {
+      const seg = e.target.closest(".seg");
+      if (!seg) { tip.hidden = true; return; }
+      const box = chart.getBoundingClientRect();
+      const bar = seg.closest("[data-name]");
+      tip.textContent = (bar ? bar.dataset.name + ": " : "") + seg.dataset.tip;
+      tip.hidden = false;
+      const x = Math.min(Math.max(e.clientX - box.left, tip.offsetWidth / 2 + 4), box.width - tip.offsetWidth / 2 - 4);
+      tip.style.left = x + "px";
+      tip.style.top = (e.clientY - box.top) + "px";
+    });
+    area.addEventListener("pointerleave", () => { tip.hidden = true; });
+    area.addEventListener("scroll", () => { tip.hidden = true; });
+  }
+  hoverLabels($("#decadeChart"), $("#decadeBars"), $("#decadeTip"));
+  hoverLabels($("#monthChart"), $("#monthScroll"), $("#monthTip"));
+
+  function drawMonths() {
+    // The shared filter's songs: picked genres and picked decades, like the rest of the page.
+    // Each bar is the shared filter run for that month; its stack splits those songs by
+    // genre: the six colored genres, then the rest as one grey segment.
+    const perMonth = new Map(months.map(k => [k, rowsFor(stateFor(state, "months", k))]));
+    const counts = new Map(months.map(k => [k, perMonth.get(k).length]));
+    const byGenre = new Map(months.map(k => [k, tallyGenres(perMonth.get(k))]));
+    const top = Math.max(1, ...counts.values());
+    const names = [...picked].map(id => groups.find(g => g.id === id).name);
+    const decadeNames = [...pickedDecades].sort().map(decadeLabel);
+    $("#addedNote").textContent = `Songs added to the playlist each month${names.length ? `, in ${names.join(" or ")}` : ""}${decadeNames.length ? `, from the ${decadeNames.join(" or ")}` : ""}.`;
+
+    $("#monthPlot").style.setProperty("--months", months.length);
+    // Each year spans its months' columns, with its name once underneath. A thin line marks
+    // where each year starts; the first year has none, since the chart's edge isn't a
+    // January.
+    const years = [];
+    months.forEach((k, i) => {
+      const y = k.slice(0, 4);
+      if (years.length && years.at(-1).year === y) years.at(-1).end = i + 2;
+      else years.push({ year: y, start: i + 1, end: i + 2 });
+    });
+    $("#yearBands").innerHTML = years.map((b, i) =>
+      `<span class="year-band${i ? " year-start" : ""}" style="grid-column:${b.start} / ${b.end}"><span class="band-year">${b.year}</span></span>`).join("");
+    $("#monthBars").innerHTML = months.map((k, i) => {
+      const n = counts.get(k);
+      const [y, m] = k.split("-");
+      // All months fit across the chart, so only quarter months are named (Jan, Apr, Jul,
+      // Oct, plus the first bar); each year is named once, in its band. Every month is
+      // still named in its hover label and screen-reader label.
+      const tick = i === 0 || ["01", "04", "07", "10"].includes(m);
+      return `<li>
+        <button type="button" class="decade-bar month-bar" data-month="${k}" data-name="${esc(monthName(k))}" aria-pressed="${pickedMonths.has(k)}"
+          ${pickedMonths.size && !pickedMonths.has(k) ? "data-dim" : ""} ${n || pickedMonths.has(k) ? "" : "disabled"}
+          aria-label="${monthName(k)}: ${n} ${n === 1 ? "song" : "songs"} added${n ? `: ${spoken(byGenre.get(k))}` : ""}">
+          <span class="db-track" style="--h:${(n / top) * 100}%">
+            <span class="db-fill db-stack">${stack(byGenre.get(k))}</span>${n ? `<span class="db-num${n < 5 ? " db-num-small" : ""}">${n}</span>` : ""}
+          </span>
+          <span class="db-label">${tick ? `<span class="mb-mon">${monthName(k, "short").split(" ")[0]}</span>` : ""}</span>
+        </button>
+      </li>`;
+    }).join("");
+
+    // A card under the chart for each picked month: songs added and the top artists then.
+    const detail = $("#monthDetail");
+    detail.hidden = !pickedMonths.size;
+    detail.innerHTML = [...pickedMonths].sort().map(k => {
+      const inMonth = perMonth.get(k) || [];
+      const byArtist = new Map();
+      inMonth.forEach(r => { const a = r.song.artists[0]; if (a) byArtist.set(a, (byArtist.get(a) || 0) + 1); });
+      const topArtists = [...byArtist].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 5);
+      return `<div class="dd-item">
+        <p class="dd-head"><strong>${esc(monthName(k))}</strong> <span class="muted">${inMonth.length} ${inMonth.length === 1 ? "song" : "songs"} added</span>
+          <button type="button" class="dd-x" data-month="${k}" aria-label="Remove the ${esc(monthName(k))} filter">×</button></p>
+        ${topArtists.length ? `<ol class="dd-artists">${topArtists.map(([a, n]) => `<li><button type="button" class="linkish" data-artist="${esc(a)}">${esc(a)}</button> <span class="muted">${n}</span></li>`).join("")}</ol>` : `<p class="muted">No songs match the other filters this month.</p>`}
+      </div>`;
+    }).join("");
+  }
+
   root.addEventListener("click", e => {
+    const month = e.target.closest("[data-month]");
+    if (month) return filter.toggleMonth(month.dataset.month);  // the subscription redraws
     const decade = e.target.closest("[data-decade]");
     if (decade) return filter.toggleDecade(Number(decade.dataset.decade));  // the subscription redraws
     const bar = e.target.closest("[data-group]");

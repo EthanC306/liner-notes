@@ -1,0 +1,200 @@
+{
+  "exported_at": "2026-05-01T00:00:00+00:00",
+  "playlist": {
+    "name": "Old Fixture Mix"
+  },
+  "songs": [
+    {
+      "position": 1,
+      "title": "I Smoked Away My Brain (I'm God x Demons Mashup) (feat. Imogen Heap & Clams Casino)",
+      "artists": [
+        {
+          "name": "A$AP Rocky",
+          "id": "asap",
+          "url": "https://open.spotify.com/artist/asap"
+        },
+        {
+          "name": "Imogen Heap",
+          "id": "imogen",
+          "url": "https://open.spotify.com/artist/imogen"
+        },
+        {
+          "name": "Clams Casino",
+          "id": "clams",
+          "url": "https://open.spotify.com/artist/clams"
+        }
+      ],
+      "album": {
+        "name": "AT.LONG.LAST.A$AP",
+        "id": null,
+        "type": "album",
+        "release_date": "2015-05-26",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2022-09-18T16:23:16Z",
+      "is_local": false,
+      "id": "smoked",
+      "url": "https://open.spotify.com/track/smoked"
+    },
+    {
+      "position": 2,
+      "title": "Everything Is Alright",
+      "artists": [
+        {
+          "name": "Motion City Soundtrack",
+          "id": "mcs",
+          "url": "https://open.spotify.com/artist/mcs"
+        }
+      ],
+      "album": {
+        "name": "Commit This To Memory",
+        "id": null,
+        "type": "album",
+        "release_date": "2005-01-11",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2022-10-01T10:00:00Z",
+      "is_local": false,
+      "id": "mcs1",
+      "url": "https://open.spotify.com/track/mcs1"
+    },
+    {
+      "position": 3,
+      "title": "Everything Is Alright",
+      "artists": [
+        {
+          "name": "Motion City Soundtrack",
+          "id": "mcs",
+          "url": "https://open.spotify.com/artist/mcs"
+        }
+      ],
+      "album": {
+        "name": "Commit This To Memory",
+        "id": null,
+        "type": "album",
+        "release_date": "2005-01-11",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2022-09-20T10:00:00Z",
+      "is_local": false,
+      "id": "mcs1",
+      "url": "https://open.spotify.com/track/mcs1"
+    },
+    {
+      "position": 4,
+      "title": "Ohio is for lovers",
+      "artists": [
+        {
+          "name": "Hawthorne Heights",
+          "id": "hh",
+          "url": "https://open.spotify.com/artist/hh"
+        }
+      ],
+      "album": {
+        "name": "The Silence In Black and White",
+        "id": null,
+        "type": "album",
+        "release_date": "2004-06-08",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2022-10-15T10:00:00Z",
+      "is_local": false,
+      "id": "ohio-old",
+      "url": "https://open.spotify.com/track/ohio-old"
+    },
+    {
+      "position": 5,
+      "title": "Y2Mate.is - guardin - fake (prod. by canis major)-hgLryZHnh-w-160k-1654285075557",
+      "artists": [
+        {
+          "name": "",
+          "id": null,
+          "url": null
+        }
+      ],
+      "album": {
+        "name": "",
+        "id": null,
+        "type": null,
+        "release_date": null,
+        "release_date_precision": null,
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2022-11-01T10:00:00Z",
+      "is_local": true,
+      "id": null,
+      "url": null
+    },
+    {
+      "position": 6,
+      "title": "Need",
+      "artists": [
+        {
+          "name": "Pinegrove",
+          "id": "pinegrove",
+          "url": "https://open.spotify.com/artist/pinegrove"
+        }
+      ],
+      "album": {
+        "name": "Cardinal",
+        "id": null,
+        "type": "album",
+        "release_date": "2016-02-12",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2025-12-01T10:00:00Z",
+      "is_local": false,
+      "id": "need",
+      "url": "https://open.spotify.com/track/need"
+    },
+    {
+      "position": 7,
+      "title": "Bulls In The Bronx",
+      "artists": [
+        {
+          "name": "Pierce The Veil",
+          "id": "ptv",
+          "url": "https://open.spotify.com/artist/ptv"
+        }
+      ],
+      "album": {
+        "name": "Collide With The Sky",
+        "id": null,
+        "type": "album",
+        "release_date": "2012-07-17",
+        "release_date_precision": "day",
+        "image": null,
+        "url": null
+      },
+      "duration_ms": 200000,
+      "explicit": false,
+      "added_at": "2023-04-13T10:00:00Z",
+      "is_local": false,
+      "id": "bulls",
+      "url": "https://open.spotify.com/track/bulls"
+    }
+  ]
+}

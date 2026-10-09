@@ -50,30 +50,26 @@ def override_key(song):
     return "id:" + song["id"] if song.get("id") else "local:" + song["title"]
 
 
-def main():
-    if len(sys.argv) < 2:
-        sys.exit("Usage: python fix_added_dates.py old_playlist.json")
-    with open(sys.argv[1], encoding="utf-8") as f:
-        old = json.load(f)
-    with open(SONGS_FILE, encoding="utf-8") as f:
-        data = json.load(f)
+def compare_playlists(songs, old_songs):
+    """Finds the earlier added date the old playlist has for each current song.
 
-    # Earliest date for every way of recognising each song in the old playlist.
+    Songs match by Spotify ID, then by title plus main artist. A song in the old playlist
+    more than once takes its earliest date. Returns (changed, kept, unmatched):
+      changed:   [(song, current_date, earlier_date)] for songs whose date should move earlier
+      kept:      how many songs matched but already had the earliest date
+      unmatched: songs not in the old playlist, which keep their own date
+    Nothing is modified.
+    """
     earliest = {}
-    for song in old["songs"]:
+    for song in old_songs:
         if not song.get("added_at"):
             continue
         for key in song_keys(song):
             if key not in earliest or song["added_at"] < earliest[key]:
                 earliest[key] = song["added_at"]
 
-    overrides = {}
-    if os.path.exists(OVERRIDES_FILE):
-        with open(OVERRIDES_FILE, encoding="utf-8") as f:
-            overrides = json.load(f)
-
     changed, kept, unmatched = [], 0, []
-    for song in data["songs"]:
+    for song in songs:
         found = [earliest[k] for k in song_keys(song) if k in earliest]
         if not found:
             unmatched.append(song)
@@ -83,6 +79,24 @@ def main():
             kept += 1
             continue
         changed.append((song, song.get("added_at"), best))
+    return changed, kept, unmatched
+
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit("Usage: python fix_added_dates.py old_playlist.json")
+    with open(sys.argv[1], encoding="utf-8") as f:
+        old = json.load(f)
+    with open(SONGS_FILE, encoding="utf-8") as f:
+        data = json.load(f)
+
+    overrides = {}
+    if os.path.exists(OVERRIDES_FILE):
+        with open(OVERRIDES_FILE, encoding="utf-8") as f:
+            overrides = json.load(f)
+
+    changed, kept, unmatched = compare_playlists(data["songs"], old["songs"])
+    for song, _, best in changed:
         song["added_at"] = best
         overrides[override_key(song)] = best
 
