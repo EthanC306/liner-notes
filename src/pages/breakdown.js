@@ -4,6 +4,7 @@ import { artistByName } from "../data.js";
 import { GROUPS, NO_GENRE, songGroup, artistGenres } from "../genres.js";
 import { openArtist } from "../artist-sheet.js";
 import { esc } from "../util.js";
+import { filter } from "../filter.js";
 
 export function render(root, { songs }) {
   // Each song's group, and every specific genre of every artist on it.
@@ -18,7 +19,10 @@ export function render(root, { songs }) {
     .sort((a, b) => (a.id === "none") - (b.id === "none") || b.count - a.count);
   const max = Math.max(...groups.map(g => g.count));
 
-  const picked = new Set();   // group ids
+  // Genre groups come from the shared filter, so a pick here carries to the other tabs.
+  // A picked group with no songs (like Other) is left out, the same as on the Overview.
+  let picked = new Set();
+  const readFilter = () => { picked = new Set([...filter.groups()].filter(id => groups.some(g => g.id === id))); };
   const narrowed = new Set(); // specific genres
 
   root.innerHTML = `
@@ -56,6 +60,7 @@ export function render(root, { songs }) {
   }
 
   function draw() {
+    readFilter();
     const any = picked.size > 0;
     $("#genreBars").innerHTML = groups.map(g => {
       const pct = Math.round((g.count / songs.length) * 100);
@@ -98,15 +103,16 @@ export function render(root, { songs }) {
 
   root.addEventListener("click", e => {
     const bar = e.target.closest("[data-group]");
-    if (bar) { const id = bar.dataset.group; picked.has(id) ? picked.delete(id) : picked.add(id); return draw(); }
+    if (bar) return filter.toggleGroup(bar.dataset.group);  // the subscription below redraws
     const chip = e.target.closest("[data-genre]");
     if (chip) { const g = chip.dataset.genre; narrowed.has(g) ? narrowed.delete(g) : narrowed.add(g); return draw(); }
-    if (e.target.closest("#clearGenres")) { picked.clear(); narrowed.clear(); return draw(); }
+    if (e.target.closest("#clearGenres")) { narrowed.clear(); return filter.clear(); }
     const song = e.target.closest("[data-song]");
     if (song) return openArtist(song.dataset.songArtist, { song: Number(song.dataset.song) });
     const artist = e.target.closest("[data-artist]");
     if (artist) openArtist(artist.dataset.artist);
   });
 
+  const stop = filter.subscribe(() => (root.isConnected ? draw() : stop()));
   draw();
 }

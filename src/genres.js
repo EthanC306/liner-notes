@@ -1,10 +1,13 @@
 // Sorts MusicBrainz's very specific genres ("midwest emo", "easycore", "cloud rap")
 // into a few broad groups. Rules are checked in order and the first match wins,
-// so "emo rap" lands in Emo & cloud rap before the Emo rule sees it.
+// so "emo rap" lands in Emo & cloud rap, and "metalcore" in Metal before
+// Emo & post-hardcore sees it.
 export const GROUPS = [
-  { id: "emo", name: "Emo", test: g => /\bemo\b|emocore|midwest emo/.test(g) && !/rap/.test(g) },
+  // Ids stay the same when a group is renamed, so filters saved in the browser keep working.
+  { id: "emo", name: "Midwest emo", test: g => /\bemo\b|emocore|midwest emo/.test(g) && !/rap/.test(g) },
   { id: "emorap", name: "Emo & cloud rap", test: g => /emo rap|cloud rap|sad rap/.test(g) },
-  { id: "heavy", name: "Post-hardcore & metal", test: g => /metal|hardcore(?! hip hop)|screamo|easycore|core$|djent/.test(g) },
+  { id: "metal", name: "Metal", test: g => /metal|deathcore|djent|grindcore/.test(g) },
+  { id: "heavy", name: "Emo & post-hardcore", test: g => /hardcore(?! hip hop)|screamo|easycore|core$/.test(g) },
   { id: "punk", name: "Pop punk & punk", test: g => /punk|skate/.test(g) },
   { id: "rap", name: "Rap & hip hop", test: g => /hip hop|rap|trap|drill|boom bap|horrorcore|grime/.test(g) },
   { id: "rnb", name: "R&B & soul", test: g => /r&b|soul|funk/.test(g) },
@@ -24,7 +27,11 @@ export function groupOf(genre) {
 // An artist's genres, already picked from your file, MusicBrainz or Last.fm in data.js.
 export const artistGenres = artist => artist?.genres || [];
 
-// A song's group comes from its main artist's top genre;
+// An artist's own group, from their top genre. The Artists tab filters on this.
+export const artistGroup = artist => (artist?.genres?.length ? groupOf(artist.genres[0]) : NO_GENRE);
+
+// Song pages (Overview, Breakdown) give each song exactly one group, from its main
+// artist; featured artists don't count. A song's group comes from its main artist's top genre;
 // if the main artist has none, the other artists on the song are tried.
 export function songGroup(song, artistByName) {
   for (const name of song.artists) {

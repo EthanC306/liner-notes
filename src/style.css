@@ -578,5 +578,65 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
   .tile-name { font-size: .7rem; }
   .drop-marker { min-height: 3.8rem; }
 }
-.chip-clear { padding: .15rem .7rem; font-size: .95rem; }
 .page { display: contents; }  /* its sections lay out in #app's grid as before */
+
+/* A picked genre chip: hovering turns its number into an x that removes it. */
+.narrow-chip.removable .chip-n { position: relative; }
+.narrow-chip.removable .chip-n::after { content: "×"; position: absolute; inset: 0; display: grid; place-items: center; visibility: hidden; font-weight: 700; font-size: 1.1em; }
+.narrow-chip.removable[aria-pressed="true"]:is(:hover, :focus-visible) .chip-n { color: transparent; }
+.narrow-chip.removable[aria-pressed="true"]:is(:hover, :focus-visible) .chip-n::after { visibility: visible; color: var(--paper); }
+
+/* The filter chips above the song count on the Overview. */
+/* One row: the first three chips (names shorten if they must), +N for the rest, Clear all.
+   "+N" opens the row up to show every chip. */
+.filter-chips { list-style: none; margin: 0 0 -.5rem; padding: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: .4rem; min-width: 0; }
+.filter-chips.open { flex-wrap: wrap; }
+.filter-chips li { min-width: 0; flex: 0 1 auto; }
+.filter-chips li:has(.fchip-more), .filter-chips li:has(.fchip-clear) { flex-shrink: 0; }
+.fchip { max-width: 100%; }
+.fchip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fchip-n, .fchip-x { flex-shrink: 0; }
+.fchip-more, .fchip-clear {
+  font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+  border-radius: 999px; padding: .2rem .75rem; border: 1px solid var(--dye);
+}
+.fchip-more { color: var(--dye); background: none; }
+.fchip-more:hover { background: color-mix(in srgb, var(--dye) 10%, transparent); }
+.fchip-clear { color: var(--ink-2); background: none; border-color: var(--rule); }
+.fchip-clear:hover { color: var(--ink); border-color: var(--ink-2); }
+
+/* The big song count stays on one line and sizes itself to the column. */
+.front { container-type: inline-size; }
+.front .scrawl { white-space: nowrap; font-size: min(6.5rem, 15.5cqi); }
+.front .scrawl small { white-space: normal; }
+.fchip {
+  font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: .4rem;
+  color: var(--paper); background: var(--dye); border: 1px solid var(--dye); border-radius: 999px; padding: .2rem .45rem .2rem .8rem;
+}
+.fchip-n { font-weight: 400; opacity: .8; }
+.fchip-x { display: inline-grid; place-items: center; width: 1.35rem; height: 1.35rem; border-radius: 50%; background: color-mix(in srgb, var(--paper) 22%, transparent); font-weight: 700; line-height: 1; }
+.fchip:hover .fchip-x { background: var(--paper); color: var(--dye); }
+
+/* While the disc spins in, its square box pokes out past its corners; on a phone that
+   widened the page and Chrome kept the extra width afterwards. Clip the spinning parts. */
+.disc-clip { position: absolute; inset: 0; overflow: clip; }
+.label-wrap { overflow: clip; }
+/* In a narrow column the chips drop their song counts to keep room for names. */
+@container (max-width: 27rem) {
+  .filter-chips:not(.open) .fchip-n { display: none; }
+  .fchip { padding-left: .65rem; gap: .3rem; }
+}
+/* Chips a touch smaller than other buttons, so three fit beside +N and Clear all. */
+.fchip, .fchip-more, .fchip-clear { font-size: .92rem; }
+.fchip { padding: .15rem .3rem .15rem .7rem; gap: .3rem; }
+.fchip-x { width: 1.2rem; height: 1.2rem; }
+.fchip-more, .fchip-clear { padding: .15rem .6rem; }
+.filter-chips { gap: .3rem; }
+@container (max-width: 27rem) {
+  .fchip, .fchip-more, .fchip-clear { font-size: .85rem; }
+  .fchip { padding-left: .55rem; }
+  .fchip-more, .fchip-clear { padding: .15rem .5rem; }
+}
+/* The tilted headline overlaps the chip row's bottom edge; keep the chips on top so
+   they stay clickable (the "Fewer" chip sat under the headline when the row wrapped). */
+.filter-chips { position: relative; z-index: 1; }

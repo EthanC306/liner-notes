@@ -110,24 +110,46 @@ songs.forEach(s => { s.genres = [...new Set(s.artists.flatMap(n => byArtist.get(
 
 const artists = [...byArtist.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
-const byAlbum = new Map();
-songs.forEach(s => {
-  if (!s.album) return;
-  const k = s.album + "\u0001" + (s.artists[0] || "");
-  const e = byAlbum.get(k) || { album: s.album, artist: s.artists[0] || "", count: 0 };
-  e.count++;
-  byAlbum.set(k, e);
-});
-const albums = [...byAlbum.values()].sort((a, b) => b.count - a.count || a.album.localeCompare(b.album));
-
 export const artistByName = name => byArtist.get(name);
+
+// Artists, albums and counts for any set of songs: the whole playlist, or the songs
+// a filter leaves. Artist entries keep their photo, genres and so on, but count and
+// songs only cover the given songs.
+export function summarize(list) {
+  const counted = new Map();
+  list.forEach(song => song.artists.forEach(name => {
+    const full = byArtist.get(name);
+    if (!full) return;
+    let e = counted.get(name);
+    if (!e) { e = { ...full, count: 0, albums: new Set(), songs: [] }; counted.set(name, e); }
+    e.count++;
+    e.songs.push(song);
+    if (song.album) e.albums.add(song.album);
+  }));
+  const artists = [...counted.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+  const byAlbum = new Map();
+  list.forEach(s => {
+    if (!s.album) return;
+    const k = s.album + "\u0001" + (s.artists[0] || "");
+    const e = byAlbum.get(k) || { album: s.album, artist: s.artists[0] || "", count: 0 };
+    e.count++;
+    byAlbum.set(k, e);
+  });
+  const albums = [...byAlbum.values()].sort((a, b) => b.count - a.count || a.album.localeCompare(b.album));
+
+  return {
+    songs: list,
+    artists,
+    albums,
+    onceCount: artists.filter(a => a.count === 1).length,
+    rips: list.filter(s => s.rip).length,
+  };
+}
 
 export const playlist = {
   info: data.playlist,
   exportedAt: data.exported_at ? new Date(data.exported_at) : null,
-  songs,
-  artists,
-  albums,
-  onceCount: artists.filter(a => a.count === 1).length,
-  rips: songs.filter(s => s.rip).length,
+  ...summarize(songs),
+  artists,  // the full entries, with every song of each artist
 };

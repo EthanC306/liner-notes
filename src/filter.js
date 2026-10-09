@@ -3,15 +3,18 @@
 // browser, and other open tabs of the app pick up changes too.
 //
 // Right now it holds genre groups (ids from GROUPS in genres.js, plus "none").
-// Hooked up so far: the genre chips on the Artists tab.
+// Hooked up: the genre chips on the Artists tab, the Overview tab and the Breakdown tab.
+import { GROUPS, NO_GENRE } from "./genres.js";
+
 const STORE_KEY = "playlist-stat:filter";
+const KNOWN = new Set([...GROUPS, NO_GENRE].map(g => g.id));  // a saved group that no longer exists is dropped
 const listeners = new Set();
 
 let groups = new Set();
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
-    groups = new Set(Array.isArray(saved.groups) ? saved.groups : []);
+    groups = new Set((Array.isArray(saved.groups) ? saved.groups : []).filter(id => KNOWN.has(id)));
   } catch { groups = new Set(); /* storage blocked or bad data */ }
 }
 load();

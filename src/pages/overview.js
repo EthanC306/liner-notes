@@ -1,22 +1,66 @@
 import { esc, fmtLength, fmtRelease } from "../util.js";
 import { openArtist } from "../artist-sheet.js";
+import { filter } from "../filter.js";
+import { artistByName, summarize } from "../data.js";
+import { GROUPS, NO_GENRE, songGroup } from "../genres.js";
 
 const NS = "http://www.w3.org/2000/svg";
+const ALL_GROUPS = [...GROUPS, NO_GENRE];
 
-export function render(root, { songs, artists, albums, onceCount, rips }) {
+// The Overview follows the shared filter: with genres picked, everything on the
+// page (disc, count, facts, albums, superlatives, tracklist) covers only those songs.
+export function render(root, playlist) {
+  // Each song's group comes from its main artist; featured artists don't count.
+  const groupOfSong = new Map(playlist.songs.map(s => [s, songGroup(s, artistByName).id]));
+  const songCount = id => playlist.songs.filter(s => groupOfSong.get(s) === id).length;
+  let chipsOpen = false;  // whether every filter chip shows, or just the first three
+
+  function show() {
+    // A picked group with no songs here (like Other, whose artists are only ever
+    // featured) is left out: no chip, and it doesn't filter anything.
+    const picked = new Set([...filter.groups()].filter(id => songCount(id) > 0));
+    const songs = picked.size ? playlist.songs.filter(s => picked.has(groupOfSong.get(s))) : playlist.songs;
+    const chips = ALL_GROUPS.filter(g => picked.has(g.id)).map(g => ({ ...g, count: songCount(g.id) }));
+    // Three chips fit beside +N and Clear all; on a phone only two do.
+    const visible = matchMedia("(max-width: 480px)").matches ? 2 : 3;
+    if (chips.length <= visible) chipsOpen = false;
+    // A fresh element each time, so this draw's click handlers go away with it.
+    const inner = document.createElement("div");
+    inner.className = "page";
+    root.replaceChildren(inner);
+    draw(inner, summarize(songs), { chips, total: playlist.songs.length, chipsOpen, visible });
+    inner.addEventListener("click", e => {
+      if (e.target.closest("[data-more-chips]")) { chipsOpen = !chipsOpen; show(); }
+    });
+  }
+
+  const stop = filter.subscribe(() => (root.isConnected ? show() : stop()));
+  show();
+}
+
+function draw(root, { songs, artists, albums, onceCount, rips }, { chips, total, chipsOpen, visible }) {
+  const filtered = chips.length > 0;
   root.innerHTML = `
   <header class="sleeve">
     <div class="disc-col">
       <div class="disc-wrap" id="discWrap">
-        <div class="disc spin" aria-hidden="true"></div>
-        <svg class="disc-svg spin" id="discSvg" viewBox="0 0 100 100" role="group" aria-label="Top 10 artists by number of songs"></svg>
+        <div class="disc-clip">
+          <div class="disc spin" aria-hidden="true"></div>
+          <svg class="disc-svg spin" id="discSvg" viewBox="0 0 100 100" role="group" aria-label="Top 10 artists by number of songs"></svg>
+        </div>
         <div class="tip" id="tip" hidden></div>
       </div>
       <p class="disc-note">Each groove is one artist. The longer the groove, the more songs they have on the playlist. Pick one to see that artist’s songs.</p>
     </div>
 
     <div class="front">
-      <h1 class="scrawl" tabindex="-1">${songs.length} songs<small>burned from Spotify</small></h1>
+      ${filtered ? `<ul class="filter-chips${chipsOpen ? " open" : ""}" aria-label="Filtered to">
+        ${/* the longest name gives up its space first, so short ones like "Metal" stay whole */""}
+        ${(chipsOpen ? chips : chips.slice(0, visible)).map((g, i, shown) => `<li style="flex-shrink:${g.name.length === Math.max(...shown.map(x => x.name.length)) ? 1000 : 1}"><button type="button" class="fchip" data-unfilter="${g.id}" aria-label="Remove the ${esc(g.name)} filter" title="${esc(g.name)}"><span class="fchip-name">${esc(g.name)}</span> <span class="fchip-n">${g.count}</span><span class="fchip-x" aria-hidden="true">×</span></button></li>`).join("")}
+        ${chips.length > visible ? `<li><button type="button" class="fchip-more" data-more-chips aria-expanded="${chipsOpen}">${chipsOpen ? "Fewer" : `+${chips.length - visible}`}</button></li>` : ""}
+        ${chips.length > 1 ? `<li><button type="button" class="fchip-clear" data-clear-filter>Clear all</button></li>` : ""}
+      </ul>` : ""}
+      <h1 class="scrawl" tabindex="-1">${songs.length} ${songs.length === 1 ? "song" : "songs"}<small>${filtered ? `of ${total}` : "burned from Spotify"}</small></h1>
       <div class="facts" id="facts"></div>
       <p class="also" id="also"></p>
     </div>
@@ -25,7 +69,7 @@ export function render(root, { songs, artists, albums, onceCount, rips }) {
   <section class="albums" aria-labelledby="albumsH">
     <header>
       <h2 id="albumsH">Albums you keep going back to</h2>
-      <p class="muted">Albums with four or more songs on the playlist, counted in tally marks.</p>
+      <p class="muted" id="albumsNote"></p>
     </header>
     <ol class="album-list" id="albumList"></ol>
   </section>
@@ -55,14 +99,17 @@ export function render(root, { songs, artists, albums, onceCount, rips }) {
 
   // ---------- front ----------
   const top = artists.slice(0, 10);
-  const topTwo = songs.filter(s => s.artists.includes(top[0].name) || s.artists.includes(top[1].name)).length;
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const topTwo = top.length > 1 ? songs.filter(s => s.artists.includes(top[0].name) || s.artists.includes(top[1].name)).length : 0;
   $("facts").innerHTML = `
-    <p><strong>${artists.length} artists</strong> across <strong>${albums.length} albums</strong>.</p>
-    <p>${esc(top[0].name)} and ${esc(top[1].name)} alone cover <strong>${topTwo} songs</strong>, about one in ${Math.round(songs.length / topTwo)}.</p>
-    <p><strong>${onceCount} artists</strong> show up only once.</p>
-    ${rips ? `<p>${rips} songs came from a YouTube rip instead of Spotify’s catalog.</p>` : ""}`;
+    <p><strong>${plural(artists.length, "artist", "artists")}</strong> across <strong>${plural(albums.length, "album", "albums")}</strong>.</p>
+    ${topTwo && top[1].count > 1 && topTwo < songs.length ? `<p>${esc(top[0].name)} and ${esc(top[1].name)} alone cover <strong>${topTwo} songs</strong>, about one in ${Math.round(songs.length / topTwo)}.</p>` : ""}
+    ${onceCount ? `<p><strong>${plural(onceCount, "artist", "artists")}</strong> ${onceCount === 1 ? "shows" : "show"} up only once.</p>` : ""}
+    ${rips ? `<p>${plural(rips, "song", "songs")} came from a YouTube rip instead of Spotify’s catalog.</p>` : ""}`;
+  const also = artists.slice(10, 22);
+  $("also").hidden = !also.length;
   $("also").innerHTML = "Also all over it: " +
-    artists.slice(10, 22).map(a => `<button type="button" class="linkish" data-artist="${esc(a.name)}">${esc(a.name)}</button> ${a.count}`).join(", ") + ".";
+    also.map(a => `<button type="button" class="linkish" data-artist="${esc(a.name)}">${esc(a.name)}</button> ${a.count}`).join(", ") + ".";
 
   // ---------- disc ----------
   const svg = $("discSvg"), tip = $("tip"), wrap = $("discWrap");
@@ -121,7 +168,14 @@ export function render(root, { songs, artists, albums, onceCount, rips }) {
     }
     return `<svg viewBox="-3 0 ${w + 6} 30" aria-hidden="true"><path d="${d}"/></svg>`;
   };
-  $("albumList").innerHTML = albums.filter(a => a.count >= 4).map(a => `
+  // Four or more songs makes an album "one you keep going back to"; a small genre
+  // may not have three of those, so then two or more counts.
+  const min = albums.filter(a => a.count >= 4).length >= 3 ? 4 : 2;
+  const repeat = albums.filter(a => a.count >= min);
+  $("albumsNote").textContent = repeat.length
+    ? `Albums with ${min === 4 ? "four" : "two"} or more songs${filtered ? " in this genre" : " on the playlist"}, counted in tally marks.`
+    : `No album has more than one song${filtered ? " in this genre" : ""}.`;
+  $("albumList").innerHTML = repeat.map(a => `
     <li><span class="t">${esc(a.album)}</span><span class="a">${a.artist ? `<button type="button" class="linkish" data-artist="${esc(a.artist)}">${esc(a.artist)}</button>` : ""}</span>
     <span class="tally">${tallySvg(a.count)}<span class="n" aria-label="${a.count} songs">${a.count}</span></span></li>`).join("");
 
@@ -144,7 +198,8 @@ export function render(root, { songs, artists, albums, onceCount, rips }) {
   const timed = songs.filter(s => s.durationMs);
   const longest = timed.reduce((m, s) => (s.durationMs > m.durationMs ? s : m), timed[0]);
   const shortest = timed.reduce((m, s) => (s.durationMs < m.durationMs ? s : m), timed[0]);
-  const longTitle = songs.filter(s => !s.rip).reduce((m, s) => (s.title.length > m.title.length ? s : m));
+  const titled = songs.filter(s => !s.rip);
+  const longTitle = titled.reduce((m, s) => (s.title.length > m.title.length ? s : m), titled[0]);
 
   // Most common collaborator: the pair of artists who share the most songs.
   const pairs = new Map();
@@ -156,6 +211,7 @@ export function render(root, { songs, artists, albums, onceCount, rips }) {
     }
   });
   const topPair = [...pairs].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+  $("superGrid").closest("section").hidden = !songs.length;
 
   const cards = [];
   if (byRelease.length) {
@@ -165,14 +221,14 @@ export function render(root, { songs, artists, albums, onceCount, rips }) {
   }
   if (longest) cards.push(songCard("Longest song", fmtLength(longest.durationMs), longest, esc(longest.album)));
   if (shortest) cards.push(songCard("Shortest song", fmtLength(shortest.durationMs), shortest, esc(shortest.album)));
-  cards.push(songCard("Longest title", `${longTitle.title.length}<span class="unit">characters</span>`, longTitle));
+  if (longTitle) cards.push(songCard("Longest title", `${longTitle.title.length}<span class="unit">characters</span>`, longTitle));
   if (topPair) {
     const [a, b] = topPair[0].split("\u0001");
     const shared = songs.filter(s => s.artists.includes(a) && s.artists.includes(b));
     cards.push(`
     <li class="super-card">
       <p class="super-label">Most common collaborators</p>
-      <p class="super-value">${topPair[1]}<span class="unit">songs together</span></p>
+      <p class="super-value">${topPair[1]}<span class="unit">${topPair[1] === 1 ? "song" : "songs"} together</span></p>
       <p class="super-song">${artistLinks([a])} and ${artistLinks([b])}</p>
       <p class="super-by muted">${shared.slice(0, 3).map(songLink).join(", ")}${shared.length > 3 ? `, and ${shared.length - 3} more` : ""}</p>
     </li>`);
@@ -186,6 +242,9 @@ export function render(root, { songs, artists, albums, onceCount, rips }) {
 
   // Any artist name on this page opens that artist.
   root.addEventListener("click", e => {
+    if (e.target.closest("[data-clear-filter]")) return filter.clear();
+    const off = e.target.closest("[data-unfilter]");
+    if (off) return filter.toggleGroup(off.dataset.unfilter);  // the page redraws itself
     const song = e.target.closest("button[data-song]");
     if (song) return openArtist(song.dataset.songArtist, { song: Number(song.dataset.song) });
     const b = e.target.closest("button[data-artist]");

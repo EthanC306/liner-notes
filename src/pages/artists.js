@@ -1,7 +1,7 @@
 // Artists: every artist on the playlist as a photo tile, with search, sorting and
 // genre filters. A tile opens the artist popup.
 import { openArtist } from "../artist-sheet.js";
-import { GROUPS, NO_GENRE, groupOf } from "../genres.js";
+import { GROUPS, NO_GENRE, artistGroup } from "../genres.js";
 import { esc, fmtDate } from "../util.js";
 import * as tierList from "./tiers.js";
 import { filter } from "../filter.js";
@@ -19,7 +19,6 @@ const SORTS = {
 };
 
 const initials = name => name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
-const artistGroup = a => (a.genres.length ? groupOf(a.genres[0]) : NO_GENRE);
 
 export function render(root, playlist) {
   const { artists } = playlist;
@@ -47,8 +46,7 @@ export function render(root, playlist) {
       </div>
     </div>
     <ul class="narrow-chips" aria-label="Filter by genre">
-      ${groups.map(g => `<li><button type="button" class="narrow-chip" data-group="${g.id}">${esc(g.name)} <span>${g.count}</span></button></li>`).join("")}
-      <li><button type="button" class="ghost-btn chip-clear" id="clearGroups" hidden>Clear genres</button></li>
+      ${groups.map(g => `<li><button type="button" class="narrow-chip removable" data-group="${g.id}">${esc(g.name)} <span class="chip-n">${g.count}</span></button></li>`).join("")}
     </ul>
 
     <p class="muted" id="artistCount" aria-live="polite"></p>
@@ -63,8 +61,10 @@ export function render(root, playlist) {
   function draw() {
     root.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === view.sort));
     const picked = filter.groups();
-    root.querySelectorAll("[data-group]").forEach(b => b.setAttribute("aria-pressed", picked.has(b.dataset.group)));
-    $("#clearGroups").hidden = !picked.size;
+    root.querySelectorAll("[data-group]").forEach(b => {
+      b.setAttribute("aria-pressed", picked.has(b.dataset.group));
+      b.title = picked.has(b.dataset.group) ? "Remove this filter" : "";
+    });
     const q = view.q.toLowerCase();
     const list = artists
       .filter(a => (!picked.size || picked.has(artistGroup(a).id)) && (!q || a.name.toLowerCase().includes(q)))
@@ -122,7 +122,6 @@ export function render(root, playlist) {
     if (sort) { view.sort = sort.dataset.sort; return draw(); }
     const group = e.target.closest("[data-group]");
     if (group) return filter.toggleGroup(group.dataset.group);  // the subscription below redraws
-    if (e.target.closest("#clearGroups")) return filter.clear();
     const card = e.target.closest("[data-artist]");
     if (card) openArtist(card.dataset.artist);
   });
