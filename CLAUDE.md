@@ -81,15 +81,30 @@ with that type's picks replaced by one value, so a chart never shrinks from its 
 `filter.subscribe(() => root.isConnected ? redraw() : stop())`. Decades and months come from
 `src/decades.js` and `src/months.js`.
 
-**Recommend.** `lastfm_similar.py` only fetches; `src/recommend.js` does the scoring in the app so it follows
-the shared filter: seeds are the main artists of the filtered songs, weighted by the square root of songs
-led (chosen so overlap outranks one big artist's sound-alikes); a candidate's
-score is the sum of weight x Last.fm match over seeds; anyone on the playlist (features too) is excluded.
+**Recommend.** `lastfm_similar.py` only fetches; `src/recommend.js` does all the scoring in the browser, so the
+mixing board re-ranks saved data instantly. Seeds are 1-5 picked artists (equal weight) or the main artists
+of the shared filter's songs (weight = square root of songs led, so overlap outranks one big artist's
+sound-alikes). Score = sum over seeds of weight x match^curve; Safe <-> Adventurous sets depth/min match/
+curve (`adventureSettings`, middle = plain sum); Popular <-> Underground scales by Last.fm listeners vs the
+median (floored at 5,000). Excluded: playlist artists (features too), Last.fm collaboration entries that
+include one, "Not for me" hides, and with "Never heard only" anyone in `listening_history.json`. Board
+settings, hides and saves live in localStorage. Note `listening_history.json` is bundled into the build
+when present, so a built `dist/` contains it.
 
 **Streaming history.** `data/history/` holds Spotify's raw extended streaming history; it's gitignored
 because every play includes an IP address. Only `history_summary.py` reads it, writing per-artist
-hours, plays, first/last play and top songs to `listening_history.json`, which is gitignored too (it's the
-user's whole listening record); the app must work without it.
+plays, skips, hours (all time and the 12 months ending at the last play) and per-playlist-song totals to
+`listening_history.json`, which is gitignored too (it's the user's whole listening record); the app must
+work without it. A play under 30 seconds is a skip: its listening time adds to hours, but it does not add
+to the play count. History dates and calendar years use the listener's local time zone (or `HISTORY_TZ`),
+not Spotify's UTC timestamps. Plays match playlist songs like
+duplicates do (Spotify ID, then title + main artist; duplicates share the first copy's key, local files
+match under their `song_corrections.json` details); songs are keyed by Spotify ID or `local:<file title>`
+(`song.historyKey`). `src/listening.js` is the lookup; the artist popup and the Artists tab's
+"Most listened" (`src/pages/listened.js`, not filtered: it includes artists not on the playlist) use it.
+Every History feature must hide cleanly when no history summary is loaded, because most users will not
+have one. Every History feature must have a test for its calculation. Before building History UI, run the
+summary and review its total hours, total plays and top 10 artists by hours.
 
 **Styling.** All colors are tokens on `:root` with dark values under both `prefers-color-scheme` and
 `[data-theme="dark"]`. Fonts: Permanent Marker (handwriting) and Barlow Condensed.
@@ -141,7 +156,8 @@ Charts
 
 Workflow
 - Build in stages and stop for review after each one.
-- Commit after each working stage.
+- Stop for the user's review before committing any History work.
+- Commit other work after each working stage.
 - Run the filter tests before every commit. "I Smoked Away My
   Brain" (three artists, three genres) is a required test case.
 - Run tests before every commit (`npm test`).

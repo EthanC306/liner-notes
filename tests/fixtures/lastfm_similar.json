@@ -12,6 +12,10 @@
       {
         "name": "pierce the veil",
         "match": 0.6
+      },
+      {
+        "name": "Emery",
+        "match": 0.1
       }
     ],
     "Pierce The Veil": [
@@ -87,6 +91,9 @@
         "name": "Jamie All Over"
       },
       {
+        "name": "Jamie All Over - Live"
+      },
+      {
         "name": "Miserable at Best"
       },
       {
@@ -104,5 +111,34 @@
         "name": "Shoota"
       }
     ]
+  },
+  "info": {
+    "Mayday Parade": {
+      "listeners": 900000
+    },
+    "Playboi Carti": {
+      "listeners": 3000000
+    },
+    "Kendrick Lamar": {
+      "listeners": 6000000
+    },
+    "Sleeping With Sirens": {
+      "listeners": 800000
+    },
+    "The Starting Line": {
+      "listeners": 150000
+    },
+    "Taking Back Sunday": {
+      "listeners": 700000
+    },
+    "Wicca Phase Springs Eternal": {
+      "listeners": 60000
+    },
+    "Sadeyes": {
+      "listeners": 20000
+    },
+    "Emery": {
+      "listeners": 120000
+    }
   }
 }

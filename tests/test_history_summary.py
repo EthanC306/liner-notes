@@ -4,7 +4,8 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from history_summary import match_song, normalize, playlist_index, summarize  # noqa: E402
+from unittest import mock  # noqa: E402
+from history_summary import local_timezone_name, match_song, normalize, playlist_index, summarize, to_local, top_artists  # noqa: E402
 
 
 def play(artist, track, ms, ts, track_id=None):
@@ -49,13 +50,60 @@ class SkipRule(unittest.TestCase):
         s = summarize([play("A", "B", 30_000, "2020-01-01T00:00:00Z")])
         self.assertEqual((s["artists"]["A"]["plays"], s["artists"]["A"]["skips"]), (1, 0))
 
-    def test_skips_add_no_hours(self):
-        self.assertEqual(self.juice["hours"], round(440_000 / 3_600_000, 2))
-        self.assertEqual(self.s["songs"]["lucid1"], {"hours": round(440_000 / 3_600_000, 2), "plays": 2, "skips": 1})
+    def test_skip_time_still_counts_toward_hours(self):
+        # 240s + 200s played, plus 29.999s and 10s skipped: all of it is listening time
+        self.assertEqual(self.juice["hours"], round(479_999 / 3_600_000, 2))
+        self.assertEqual(self.s["songs"]["lucid1"], {"hours": round(469_999 / 3_600_000, 2), "plays": 2, "skips": 1})
+
+    def test_29_999_ms_is_a_skip(self):
+        s = summarize([play("A", "B", 29_999, "2020-01-01T00:00:00Z")])
+        self.assertEqual((s["artists"]["A"]["plays"], s["artists"]["A"]["skips"]), (0, 1))
 
     def test_artist_with_only_skips_is_kept_with_zero_plays(self):
-        s = summarize([play("A", "B", 5_000, "2020-01-01T00:00:00Z")])
-        self.assertEqual((s["artists"]["A"]["plays"], s["artists"]["A"]["hours"]), (0, 0))
+        s = summarize([play("A", "B", 18_000, "2020-01-01T00:00:00Z")])
+        self.assertEqual((s["artists"]["A"]["plays"], s["artists"]["A"]["hours"]), (0, 0.01))
+
+
+class TimeZones(unittest.TestCase):
+    NY = "America/New_York"
+
+    def test_converts_utc_to_local_time(self):
+        # 3:30 am UTC on New Year's Day is still 10:30 pm New Year's Eve in New York
+        local = to_local("2024-01-01T03:30:00Z", self.NY)
+        self.assertEqual((local.year, local.month, local.day, local.hour), (2023, 12, 31, 22))
+
+    def test_follows_daylight_saving(self):
+        self.assertEqual(to_local("2024-07-01T12:00:00Z", self.NY).utcoffset().total_seconds() / 3600, -4)  # EDT
+        self.assertEqual(to_local("2024-01-15T12:00:00Z", self.NY).utcoffset().total_seconds() / 3600, -5)  # EST
+
+    def test_a_late_new_years_eve_play_counts_in_the_old_year(self):
+        rows = [play("A", "B", 60_000, "2024-01-01T03:30:00Z")]
+        self.assertEqual(list(summarize(rows, tz=self.NY)["years"]), ["2023"])
+        self.assertEqual(list(summarize(rows, tz="UTC")["years"]), ["2024"])
+
+    def test_an_early_utc_play_stays_in_its_year(self):
+        # 2:00 am UTC on Jan 1 2025 is 9 pm Dec 31 in New York, but 2025 in Tokyo
+        rows = [play("A", "B", 60_000, "2025-01-01T02:00:00Z")]
+        self.assertEqual(list(summarize(rows, tz=self.NY)["years"]), ["2024"])
+        self.assertEqual(list(summarize(rows, tz="Asia/Tokyo")["years"]), ["2025"])
+
+    def test_first_and_last_dates_are_local(self):
+        a = summarize([play("A", "B", 60_000, "2024-01-01T03:30:00Z")], tz=self.NY)["artists"]["A"]
+        self.assertEqual((a["first"], a["last"]), ("2023-12-31", "2023-12-31"))
+
+    def test_year_totals_add_up(self):
+        rows = [play("A", "B", 60_000, "2023-06-01T12:00:00Z"), play("A", "C", 10_000, "2023-06-02T12:00:00Z"),
+                play("D", "E", 120_000, "2024-03-01T12:00:00Z")]
+        years = summarize(rows, tz=self.NY)["years"]
+        self.assertEqual(years["2023"], {"hours": 0.02, "plays": 1, "skips": 1})
+        self.assertEqual(years["2024"]["plays"], 1)
+
+    def test_records_the_time_zone_used(self):
+        self.assertEqual(summarize([play("A", "B", 60_000, "2024-01-01T00:00:00Z")], tz=self.NY)["timezone"], self.NY)
+
+    def test_history_tz_overrides_the_computer(self):
+        with mock.patch.dict(os.environ, {"HISTORY_TZ": "Europe/Berlin"}):
+            self.assertEqual(local_timezone_name(), "Europe/Berlin")
 
 
 class Matching(unittest.TestCase):
@@ -121,6 +169,32 @@ class Summary(unittest.TestCase):
 
     def test_empty_history(self):
         self.assertEqual(summarize([])["artists"], {})
+
+    def test_ghost_details_use_local_years_and_include_non_playlist_songs(self):
+        rows = [play("A", "Favorite", 36_000_000, "2024-01-01T03:30:00Z"),
+                play("A", "Favorite", 30_000, "2024-06-01T12:00:00Z"),
+                play("A", "Other", 29_999, "2024-07-01T12:00:00Z")]
+        ranges = summarize(rows, tz="America/New_York")["artists"]["A"]["ranges"]
+        self.assertEqual(ranges["all"]["peak_year"], "2023")
+        self.assertEqual(ranges["all"]["last"], "2024-07-01")
+        self.assertEqual(ranges["all"]["top_songs"], [{"title": "Favorite", "plays": 2}])
+        self.assertEqual(ranges["2023"]["hours"], 10)
+        self.assertEqual(ranges["2024"]["plays"], 1)
+        self.assertEqual(ranges["2024"]["peak_year"], "2024")
+
+    def test_recent_ghost_details_exclude_old_tracks_and_limit_songs_to_three(self):
+        rows = [play("A", "Old", 36_000_000, "2020-01-01T00:00:00Z")]
+        rows += [play("A", title, 30_000, "2024-06-01T12:00:00Z") for title in ["D", "B", "A", "C", "D"]]
+        ranges = summarize(rows)["artists"]["A"]["ranges"]
+        recent = ranges["recent"]
+        self.assertEqual(recent["plays"], 5)
+        self.assertEqual(recent["hours"], round(150_000 / 3_600_000, 2))
+        self.assertEqual(recent["peak_year"], "2024")
+        self.assertEqual([s["title"] for s in recent["top_songs"]], ["D", "A", "B"])
+
+    def test_top_artists_are_ranked_by_hours(self):
+        names = [name for name, _ in top_artists(self.s, limit=2)]
+        self.assertEqual(names, ["Juice WRLD", "Powfu"])
 
 
 if __name__ == "__main__":

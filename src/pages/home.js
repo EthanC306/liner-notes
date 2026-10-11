@@ -1,3 +1,6 @@
+import { listeningHistory } from "../data.js";
+import { hasHistory } from "../history.js";
+
 export function render(root, { songs, artists }) {
   root.innerHTML = `
   <header class="hero home-hero">
@@ -29,6 +32,10 @@ export function render(root, { songs, artists }) {
         <a href="#recommend">Recommend</a><span class="status ready">Ready</span>
         <p>Artists that sound like yours, from Last.fm, with their top songs and which of your artists they’re like.</p>
       </li>
+      ${hasHistory(listeningHistory) ? `<li>
+        <a href="#history">History</a><span class="status">Started</span>
+        <p>Your Spotify listening history, by all time, the last 12 months or a single year.</p>
+      </li>` : ""}
     </ul>
   </section>
 

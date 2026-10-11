@@ -1,10 +1,12 @@
 import "./style.css";
-import { playlist } from "./data.js";
+import { playlist, listeningHistory } from "./data.js";
+import { hasHistory } from "./history.js";
 import * as home from "./pages/home.js";
 import * as overview from "./pages/overview.js";
 import * as breakdown from "./pages/breakdown.js";
 import * as artistsPage from "./pages/artists.js";
 import * as recommendPage from "./pages/recommend.js";
+import * as historyPage from "./pages/history.js";
 import { openArtist, closeArtist } from "./artist-sheet.js";
 
 const pages = {
@@ -14,6 +16,12 @@ const pages = {
   artists: { name: "Artists", page: artistsPage },
   recommend: { name: "Recommend", page: recommendPage },
 };
+// History needs the listener's own history summary, which most people won't have: without
+// it the tab stays hidden and #history goes to Home like any unknown page.
+if (hasHistory(listeningHistory)) {
+  pages.history = { name: "History", page: historyPage };
+  document.getElementById("historyNav").hidden = false;
+}
 
 const app = document.getElementById("app");
 

@@ -16,8 +16,11 @@ every number and sentence in the app is worked out from whatever playlist is loa
   added them, with charts stacked by genre.
 - **Artists**: every artist with their photo and a popup of their songs, plus a tier list
   you can drag artists into from S to F.
-- **Recommend**: artists that sound like yours, from Last.fm. Ones similar to several of
-  your artists rank higher, each with its top songs and a "Because you like…" line.
+- **Recommend**: a mixing board for artists you don't have yet, from Last.fm. Pick 1-5 of
+  your artists or some genres under "Sounds like", slide Safe ↔ Adventurous and Popular ↔
+  Underground, switch on "Never heard only" (needs your listening history), and hit
+  **Burn it**. You get a top pick and a ranked list, each with a match bar, a "Because you
+  like…" line and three songs; hide what's not for you and save the rest to check out.
 
 Picking a genre, decade or month anywhere filters the Overview, Breakdown, Artists and
 Recommend tabs together. Your picks and tier list are saved in your browser.
