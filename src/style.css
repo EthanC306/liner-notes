@@ -163,6 +163,8 @@ p { margin: 0; }
   break-inside: avoid; display: grid; grid-template-columns: 2.4ch minmax(0, 1fr); gap: .6rem;
   padding-block: .22rem; font-size: 1rem; line-height: 1.2;
 }
+.track-list li:has(.plays) { grid-template-columns: 2.4ch minmax(0, 1fr) auto; }
+.track-list .plays { font-size: .85rem; padding-top: .08rem; }
 .track-list .num { font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; font-size: .9rem; padding-top: .08rem; }
 .track-list .ti { font-weight: 600; overflow-wrap: anywhere; }
 .track-list .ar { color: var(--ink-2); overflow-wrap: anywhere; }
@@ -331,6 +333,11 @@ html.sheet-open { overflow: hidden; }
 .song-title { font-weight: 600; font-size: 1.1rem; overflow-wrap: anywhere; }
 .song-album { color: var(--ink-2); overflow-wrap: anywhere; }
 .song-len { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+/* Play counts (from the listening history, when loaded): one more column in each song list. */
+.song-row:has(.song-plays) { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto auto; }
+.song-row:has(.song-plays)::after { grid-column: 5; }
+.song-plays, .track-list .plays, .genre-songs .plays { font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; white-space: nowrap; font-size: .95rem; }
+:is(.song-plays, .plays).never { font-style: italic; }
 .explicit { font-size: .7rem; font-weight: 700; text-decoration: none; background: var(--ink-2); color: var(--paper); border-radius: 2px; padding: 0 .3em; vertical-align: .15em; }
 
 .song-detail { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: .5rem 1.25rem; padding: .25rem .25rem 1.25rem; }
@@ -339,7 +346,9 @@ html.sheet-open { overflow: hidden; }
 .song-detail dl div { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: .75rem; }
 .song-detail dt { color: var(--ink-2); }
 .song-detail dd { margin: 0; overflow-wrap: anywhere; }
-.song-links { margin: 0; display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; }
+.song-links { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.25rem; }
+.song-play { font: inherit; font-weight: 600; cursor: pointer; color: var(--paper); background: var(--dye); border: 0; border-radius: 999px; padding: .25rem .9rem; }
+.song-play:hover { filter: brightness(1.1); }
 .song-detail:not(:has(.cover)) { grid-template-columns: minmax(0, 1fr); }
 
 @media (max-width: 640px) {
@@ -350,6 +359,9 @@ html.sheet-open { overflow: hidden; }
   .song-album { grid-column: 1; grid-row: 2; }
   .song-len { grid-column: 2; grid-row: 1; }
   .song-row::after { grid-column: 3; grid-row: 1; }
+  .song-row:has(.song-plays) { grid-template-columns: minmax(0, 1fr) auto; }
+  .song-row:has(.song-plays)::after { grid-column: 3; }
+  .song-plays { grid-column: 2; grid-row: 2; }
   .song-detail { grid-template-columns: 5rem minmax(0, 1fr); }
 }
 
@@ -505,6 +517,10 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
   color: var(--dye); background: none; border: 1px solid var(--dye); border-radius: 999px; padding: .15rem .7rem;
 }
 .narrow-chip span { font-weight: 400; opacity: .75; }
+.genre-search { position: relative; max-width: 24rem; }
+.genre-search .search { width: 100%; }
+.narrow-popular { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; }
+.narrow-popular > .muted { font-size: .95rem; }
 .narrow-chip[aria-pressed="true"] { background: var(--dye); color: var(--paper); }
 
 .genre-results { display: grid; gap: .5rem; }
@@ -519,14 +535,43 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
 .gs-by { color: var(--ink-2); font-size: .95rem; }
 .gs-by .linkish { color: var(--ink-2); }
 .gs-genres { color: var(--ink-2); font-size: .9rem; text-align: right; overflow-wrap: anywhere; }
+.genre-songs li:has(.plays) { grid-template-columns: 3ch minmax(0, 1fr) minmax(0, 16rem) 6.5rem; }
+.genre-results-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem 1.5rem; }
 
 @media (max-width: 640px) {
   .genre-bar { grid-template-columns: minmax(0, 1fr) auto; gap: .3rem .75rem; }
   .gb-track { grid-column: 1 / -1; grid-row: 2; }
   .genre-songs li { grid-template-columns: 3ch minmax(0, 1fr); }
   .gs-genres { grid-column: 2; text-align: left; }
+  .genre-songs li:has(.plays) { grid-template-columns: 3ch minmax(0, 1fr) auto; }
+  .genre-songs li:has(.plays) .gs-genres { grid-column: 2 / -1; }
+  .genre-songs .plays { grid-column: 3; grid-row: 1; }
 }
 .genre-source { font-size: .9rem; margin-top: -.35rem !important; }
+
+/* Dead weight (end of Breakdown): rarely played songs, from the listening history. */
+.dead-count { font-weight: 400; font-variant-numeric: tabular-nums; margin-left: .2rem; }
+.dead-table { width: 100%; border-collapse: collapse; border-top: 1px solid var(--rule); }
+.dead-table th { text-align: left; font-size: .9rem; font-weight: 600; color: var(--ink-2); padding: .5rem 1rem .5rem 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.dead-table td { padding: .5rem 1rem .5rem 0; border-bottom: 1px solid var(--rule); vertical-align: baseline; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dead-table td:first-child { white-space: normal; width: 100%; }
+.dead-table :is(th, td):last-child { padding-right: 0; }
+.dead-table td.never { color: var(--ink-2); font-style: italic; }
+.dead-cant { display: grid; gap: .5rem; }
+.dead-cant:empty { display: none; }
+.dead-cant h3 { margin: .5rem 0 0; font-size: 1.15rem; font-weight: 600; }
+.dead-cant h3 .muted { font-weight: 400; }
+.dead-cant-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.dead-cant-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .25rem 1rem; padding-block: .5rem; border-bottom: 1px solid var(--rule); }
+.dead-cant-list li > .muted { font-size: .95rem; }
+@media (max-width: 640px) {
+  .dead-table thead { display: none; }
+  .dead-table, .dead-table tbody, .dead-table tr, .dead-table td { display: block; width: auto; }
+  .dead-table tr { padding-block: .5rem; border-bottom: 1px solid var(--rule); }
+  .dead-table td { border: 0; padding: .1rem 0; white-space: normal; }
+  .dead-table td[data-label] { display: flex; gap: .75rem; font-size: .95rem; }
+  .dead-table td[data-label]::before { content: attr(data-label); color: var(--ink-2); font-style: normal; min-width: 8.5rem; }
+}
 
 /* ---------- artists ---------- */
 .artists-page { display: grid; gap: 1.25rem; }
@@ -958,25 +1003,97 @@ button.ls-row:hover { background: var(--field); }
 .rec-card-songs a { color: var(--dye); font-weight: 600; text-underline-offset: .2em; }
 
 /* ---------- history ---------- */
-.history-ghosts { padding-top: 1rem; }
+.history-eras { padding: 1.5rem 0; }
+.history-eras h2 { font-family: var(--f-marker); font-weight: 400; font-size: 2.5rem; }
+.history-eras > p { margin-top: .6rem; }
+.eras-legend { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; list-style: none; padding: 0; margin: 1.5rem 0; font-size: .95rem; color: var(--ink-2); }
+.eras-legend li { display: flex; align-items: center; gap: .4rem; }
+.eras-legend li > span { width: .65rem; height: .65rem; border-radius: 2px; }
+.eras-scroll { overflow-x: auto; padding: .3rem; margin: -.3rem; }
+.eras-chart { display: flex; gap: clamp(.5rem, 2vw, 1.5rem); padding-top: 2rem; }
+.eras-year { flex: 1 0 6.5rem; min-width: 0; display: grid; grid-template-rows: 18rem auto 2.8em auto; align-content: start; gap: .25rem; padding: 0 .3rem .75rem; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--ink); font: inherit; cursor: pointer; text-align: center; border-radius: 3px; }
+.eras-plot { height: 100%; display: flex; align-items: end; justify-content: center; border-bottom: 1px solid var(--rule); }
+.eras-column { display: flex; flex-direction: column-reverse; position: relative; width: 75%; max-width: 5.5rem; }
+.eras-segment { display: block; flex-shrink: 0; }
+.eras-segment-rest { background: transparent !important; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--genre-rest) 40%, transparent); }
+.eras-total { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: .35rem; white-space: nowrap; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.eras-total small { font-size: .75rem; font-weight: 400; color: var(--ink-2); }
+.eras-year-label { font-size: 1.35rem; font-weight: 600; margin-top: .35rem; }
+.eras-leader { font-size: 1rem; line-height: 1.4; overflow-wrap: anywhere; }
+.eras-leader-hours { font-size: .85rem; color: var(--ink-2); }
+.eras-year:hover, .eras-year[aria-pressed="true"] { background: color-mix(in srgb, var(--dye) 6%, transparent); }
+.eras-year[aria-pressed="true"] { border-bottom-color: var(--dye); }
+/* Ghosts: #1 as a full-width card, the rest two up; spacing follows the Breakdown sections (1.25rem). */
+.history-ghosts { padding-top: 1rem; display: grid; gap: 1.25rem; }
 .history-ghosts h2 { font-family: var(--f-marker); font-weight: 400; font-size: 2.5rem; }
-.ghost-headline { margin-top: .75rem; font-size: 1.5rem; max-width: 45rem; }
-.ghost-list { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 3rem; }
-.ghost-list > li { padding: 1.25rem 0; border-top: 1px solid var(--rule); min-width: 0; }
-.ghost-main { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
-.ghost-main strong, .ghost-main button { font: inherit; font-size: 1.5rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
-.ghost-main button { padding: 0; border: 0; background: none; cursor: pointer; text-align: left; }
-.ghost-main button:hover { text-decoration: underline; text-decoration-color: var(--dye); }
-.ghost-playlist { display: block; font-size: .85rem; color: var(--ink-2); }
-.ghost-hours { white-space: nowrap; font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ghost-headline { font-size: 1.5rem; max-width: 45rem; text-wrap: balance; }
+.ghost-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.ghost-card {
+  display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 1rem; align-items: start; min-width: 0;
+  padding: 1.25rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--field);
+  transition: border-color .15s;
+}
+.ghost-card:hover, .ghost-card:focus-within { border-color: var(--ink-2); }
+.ghost-featured { grid-column: 1 / -1; grid-template-columns: 9rem minmax(0, 1fr); gap: clamp(1rem, 3vw, 2rem); padding: clamp(1.25rem, 3vw, 2rem); }
+/* Faded, desaturated photos: a ghost of the artist. Text never sits on the photo, so contrast holds. */
+.ghost-photo { display: block; position: relative; }
+.ghost-photo img, .ghost-photo .artist-initials {
+  width: 100%; aspect-ratio: 1; object-fit: cover; display: grid; place-items: center;
+  border: 4px solid var(--paper); outline: 1px solid var(--rule); background: var(--paper);
+  filter: grayscale(1) contrast(.85); opacity: .55; transition: opacity .15s, filter .15s;
+}
+/* On the dark page a faded photo sinks into the background, so fade it less. */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ghost-photo img { opacity: .75; } }
+:root[data-theme="dark"] .ghost-photo img { opacity: .75; }
+.ghost-photo .artist-initials { font-size: 1.6rem; }
+.ghost-featured .ghost-photo .artist-initials { font-size: 3rem; }
+.ghost-card:hover .ghost-photo :is(img, .artist-initials), .ghost-card:focus-within .ghost-photo :is(img, .artist-initials) { opacity: .8; filter: grayscale(.6) contrast(.9); }
+.ghost-body { display: grid; gap: .5rem; min-width: 0; }
+.ghost-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: .6rem; }
+.ghost-rank { color: var(--ink-2); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.ghost-featured .ghost-rank { font-family: var(--f-marker); font-size: 1.6rem; color: var(--dye); }
+.ghost-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .6rem; min-width: 0; }
+.ghost-name a { font-size: 1.35rem; font-weight: 600; line-height: 1.2; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; border-radius: 2px; }
+.ghost-featured .ghost-name a { font-size: clamp(1.6rem, 4vw, 2.2rem); }
+.ghost-name a:hover, .ghost-name a:focus-visible { text-decoration: underline; text-decoration-color: var(--dye); text-underline-offset: .15em; }
+.ghost-name .ghost-tag { color: var(--ink-2); font: inherit; font-size: .85rem; line-height: 1.2; white-space: nowrap; background: none; }
+.ghost-name button.ghost-tag { cursor: pointer; color: var(--dye); border-color: currentColor; }
+.ghost-name button.ghost-tag:hover { background: color-mix(in srgb, var(--dye) 8%, transparent); }
+.ghost-hours { white-space: nowrap; font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ghost-featured .ghost-hours { font-size: clamp(1.8rem, 4vw, 2.4rem); }
 .ghost-hours small { font-size: .9rem; font-weight: 400; color: var(--ink-2); }
-.ghost-meta { font-size: .9rem; color: var(--ink-2); margin: .75rem 0; }
-.ghost-meta > span { padding-inline: .25rem; }
-.ghost-songs { list-style: none; padding: .6rem 0 0; margin: 0; border-top: 1px dashed var(--rule); display: grid; gap: .3rem; }
-.ghost-songs li { display: flex; justify-content: space-between; gap: 1rem; font-size: .95rem; }
-.ghost-songs li > span:last-child { flex-shrink: 0; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-@media (max-width: 700px) { .ghost-list { grid-template-columns: minmax(0, 1fr); } }
+.ghost-bar { height: .35rem; }
+.ghost-featured .ghost-bar { height: .5rem; }
+.ghost-bar > span { min-width: 3px; }
+.ghost-meta { font-size: .9rem; color: var(--ink-2); }
+.ghost-meta > span { white-space: nowrap; }
+.ghost-meta > span[aria-hidden] { padding-inline: .2rem; }
+.ghost-songs { list-style: none; padding: .6rem 0 0; margin: .25rem 0 0; border-top: 1px dashed var(--rule); display: grid; gap: .35rem; }
+.ghost-songs li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(2.5rem, 5rem) 4.5rem; align-items: center; gap: .75rem; font-size: .95rem; }
+.ghost-featured .ghost-songs li { grid-template-columns: minmax(0, 1fr) minmax(4rem, 14rem) 5rem; }
+.ghost-song-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ghost-song-bar { display: block; height: .3rem; border-radius: 2px; background: color-mix(in srgb, var(--rule) 35%, transparent); overflow: hidden; }
+.ghost-song-bar > span { display: block; height: 100%; min-width: 2px; background: color-mix(in srgb, var(--dye) 55%, transparent); border-radius: inherit; }
+.ghost-song-plays { color: var(--ink-2); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+/* Show all sits in the grid's free cell, or spans the row when there isn't one. */
+.ghost-more { display: grid; place-items: center; min-height: 5rem; border: 1px dashed var(--rule); border-radius: 6px; }
+.ghost-more-wide { grid-column: 1 / -1; min-height: 0; border: 0; }
+.ghost-empty { display: grid; gap: .6rem; justify-items: start; padding: 1.25rem; border: 1px dashed var(--rule); border-radius: 6px; }
+.ghost-empty .ghost-headline { font-size: 1.35rem; }
+.ghost-empty .show-more { margin-top: .4rem; justify-self: start; }
+@media (prefers-reduced-motion: reduce) { .ghost-card, .ghost-photo img, .ghost-photo .artist-initials { transition: none; } }
+@media (max-width: 700px) {
+  .ghost-list { grid-template-columns: minmax(0, 1fr); }
+  .ghost-featured { grid-template-columns: 5.5rem minmax(0, 1fr); }
+  .ghost-featured .ghost-photo .artist-initials { font-size: 1.9rem; }
+  .ghost-songs li, .ghost-featured .ghost-songs li { grid-template-columns: minmax(0, 1fr) 2.5rem auto; gap: .6rem; }
+}
+@media (max-width: 420px) {
+  .ghost-card, .ghost-featured { grid-template-columns: 3.25rem minmax(0, 1fr); gap: .75rem; padding: 1rem; }
+  .ghost-photo .artist-initials, .ghost-featured .ghost-photo .artist-initials { font-size: 1.2rem; }
+}
 .history-page { display: grid; gap: 1.5rem; }
+.history-page > * { min-width: 0; }
 .history-head { display: grid; gap: .75rem; }
 .history-head h1 { margin: 0; font-size: clamp(2.5rem, 5.5vw, 4rem); line-height: 1; font-weight: 700; letter-spacing: -.015em; }
 .history-head .lede { margin: 0; }
@@ -1021,4 +1138,26 @@ button.ls-row:hover { background: var(--field); }
   .history-compare-head, .history-compare-lists { min-width: 28rem; }
   .history-rank-row { gap: .4rem; }
   .history-rank-detail button, .history-artist { font-size: 1.1rem; }
+}
+
+/* ---------- docked player (player.js) ---------- */
+.player {
+  position: fixed; inset: auto 0 0 0; margin: 0; width: 100%; max-width: none; height: auto;
+  padding: .5rem 16px; border: 0; border-top: 1px solid var(--rule); background: var(--field); color: var(--ink);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, .08);
+}
+.player-inner { max-width: 72rem; margin-inline: auto; display: flex; align-items: center; gap: .75rem; }
+.player-embed { flex: 1; min-width: 0; height: 80px; border-radius: 12px; overflow: hidden; }
+.player-embed iframe { display: block; border: 0; }
+.player-close {
+  flex-shrink: 0; width: 2.25rem; height: 2.25rem; border-radius: 50%; cursor: pointer;
+  font: inherit; font-size: 1rem; color: var(--ink-2); background: none; border: 1px solid var(--rule);
+}
+.player-close:hover { color: var(--ink); border-color: var(--ink-2); }
+html.player-open body { padding-bottom: calc(4rem + 97px); }
+/* The artist popup is modal, so the player under it can't be clicked while it's open (clicking
+   there closes the popup). Keep the popup clear of the player so neither covers the other. */
+html.player-open .artist-sheet[open] { margin-top: 1.5rem; max-height: calc(100dvh - 97px - 3rem); }
+@media (max-width: 640px) {
+  html.player-open .artist-sheet[open] { margin-top: 0; height: calc(100dvh - 97px); max-height: calc(100dvh - 97px); }
 }

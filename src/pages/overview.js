@@ -1,7 +1,9 @@
 import { esc, fmtLength, fmtRelease } from "../util.js";
 import { openArtist } from "../artist-sheet.js";
+import { playOrOpen } from "../player.js";
 import { filter } from "../filter.js";
-import { summarize } from "../data.js";
+import { summarize, listeningHistory } from "../data.js";
+import { hasHistory, songListening, playsText, bySongPlays } from "../listening.js";
 import { GROUPS, NO_GENRE, byCountOtherLast } from "../genres.js";
 import { filterSongs, countFor, activeState } from "../selection.js";
 import { decadeLabel } from "../decades.js";
@@ -13,6 +15,9 @@ const ALL_GROUPS = [...GROUPS, NO_GENRE];
 
 // The Overview follows the shared filter: with genres, decades or months picked, everything
 // on the page (disc, count, facts, albums, superlatives, tracklist) covers only those songs.
+// The tracklist's order; kept across redraws (every filter change redraws the page).
+let trackSort = "playlist";
+
 export function render(root, playlist) {
   let chipsOpen = false;  // whether every filter chip shows, or just the first three
 
@@ -93,6 +98,9 @@ function draw(root, { songs, artists, albums, onceCount, rips }, { chips, total,
         <p class="muted" id="trackSummary"></p>
       </div>
       <div class="controls">
+        ${hasHistory(listeningHistory) ? `<div class="sort" role="group" aria-label="Sort the tracklist">
+          <button type="button" data-track-sort="playlist">Playlist order</button><button type="button" data-track-sort="plays">Most played</button>
+        </div>` : ""}
         <input id="q" class="search" type="search" placeholder="Search the tracklist" aria-label="Search the tracklist" autocomplete="off">
       </div>
     </div>
@@ -260,8 +268,10 @@ function draw(root, { songs, artists, albums, onceCount, rips }, { chips, total,
     if (offDecade) return filter.toggleDecade(Number(offDecade.dataset.undecade));
     const off = e.target.closest("[data-unfilter]");
     if (off) return filter.toggleGroup(off.dataset.unfilter);  // the page redraws itself
+    const order = e.target.closest("[data-track-sort]");
+    if (order) { trackSort = order.dataset.trackSort; return renderTracks(); }
     const song = e.target.closest("button[data-song]");
-    if (song) return openArtist(song.dataset.songArtist, { song: Number(song.dataset.song) });
+    if (song) return playOrOpen(song.dataset.song, song.dataset.songArtist);
     const b = e.target.closest("button[data-artist]");
     if (b) openArtist(b.dataset.artist);
   });
@@ -273,17 +283,27 @@ function draw(root, { songs, artists, albums, onceCount, rips }, { chips, total,
   }
   function renderTracks() {
     const needle = state.q.toLowerCase();
+    const withHistory = hasHistory(listeningHistory);
+    const byPlays = withHistory && trackSort === "plays";
+    root.querySelectorAll("[data-track-sort]").forEach(b => b.setAttribute("aria-pressed", b.dataset.trackSort === (byPlays ? "plays" : "playlist")));
     const list = songs.filter(s =>
       (!needle || s.title.toLowerCase().includes(needle) || s.artistText.toLowerCase().includes(needle) || s.album.toLowerCase().includes(needle)));
+    if (byPlays) list.sort(bySongPlays(listeningHistory));
+    const plays = s => {
+      if (!withHistory) return "";
+      const n = songListening(listeningHistory, s).plays;
+      return `<span class="plays${n ? "" : " never"}">${playsText(n)}</span>`;
+    };
     $("trackList").innerHTML = list.map(s => `
       <li><span class="num">${s.n}</span><span><span class="ti">${s.artists.length ? `<button type="button" class="linkish" data-song="${s.n}" data-song-artist="${esc(s.artists[0])}">${hl(s.title)}</button>` : hl(s.title)}</span>${s.rip ? '<span class="rip">YouTube rip</span>' : ""}<br>
-      <span class="ar">${s.artists.length ? s.artists.map(a => `<button type="button" class="linkish" data-artist="${esc(a)}">${hl(a)}</button>`).join(", ") : "Unknown artist"}</span></span></li>`).join("");
+      <span class="ar">${s.artists.length ? s.artists.map(a => `<button type="button" class="linkish" data-artist="${esc(a)}">${hl(a)}</button>`).join(", ") : "Unknown artist"}</span></span>${plays(s)}</li>`).join("");
     const empty = $("empty");
     empty.hidden = list.length > 0;
     if (!list.length) empty.textContent = `No songs match “${state.q}”. Try a shorter search.`;
+    const order = byPlays ? "most played first" : "in playlist order";
     $("trackSummary").textContent = state.q
-      ? `${list.length} of ${songs.length} songs, in playlist order.`
-      : `All ${songs.length} songs, in playlist order.`;
+      ? `${list.length} of ${songs.length} songs, ${order}.`
+      : `All ${songs.length} songs, ${order}.`;
   }
   renderTracks();
 }

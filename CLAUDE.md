@@ -18,6 +18,9 @@ Data pipeline (Python, run from the repo root with the venv):
 .venv/bin/python spotify_playlist_export.py ["<playlist link>"] [--out file.json] [--no-artists]
     # Spotify login in the browser (opens the Windows browser under WSL), writes playlist_songs.json
     # and reapplies date_overrides.json. --out writes elsewhere (used for an old playlist lookup).
+.venv/bin/python spotify_playlist_export.py --artists-for old_playlist.json
+    # photos/links for the old playlist's artists -> old_playlist_artists.json (Ghosts on History);
+    # reuses playlist_songs.json's artists, leaves old_playlist.json alone
 .venv/bin/python fix_added_dates.py old_playlist.json   # real added dates from an older playlist export
 .venv/bin/python musicbrainz_artists.py                  # genres, hometown, start year -> musicbrainz_artists.json
 .venv/bin/python musicbrainz_songs.py                    # original first-release dates -> musicbrainz_songs.json
@@ -93,7 +96,8 @@ when present, so a built `dist/` contains it.
 
 **Streaming history.** `data/history/` holds Spotify's raw extended streaming history; it's gitignored
 because every play includes an IP address. Only `history_summary.py` reads it, writing per-artist
-plays, skips, hours (all time and the 12 months ending at the last play) and per-playlist-song totals to
+plays, skips, hours (all time and the 12 months ending at the last play) and per-playlist-song totals
+(plus plays since the song was added and its last play, for Breakdown's Dead weight) to
 `listening_history.json`, which is gitignored too (it's the user's whole listening record); the app must
 work without it. A play under 30 seconds is a skip: its listening time adds to hours, but it does not add
 to the play count. History dates and calendar years use the listener's local time zone (or `HISTORY_TZ`),
@@ -105,6 +109,13 @@ match under their `song_corrections.json` details); songs are keyed by Spotify I
 Every History feature must hide cleanly when no history summary is loaded, because most users will not
 have one. Every History feature must have a test for its calculation. Before building History UI, run the
 summary and review its total hours, total plays and top 10 artists by hours.
+
+**Player.** `src/player.js` docks a Spotify embed (the iFrame API, loaded on first use) at the bottom
+of the page. Song names on every page call `playOrOpen(n, artist)`: play the song, or open the artist
+popup for songs with no Spotify ID. The popup's song details have a Play button. The player is a
+`popover` so it draws above the modal artist popup, but a modal makes it inert, so while the popup is
+open it shrinks to stay clear of the player. Logged in to Spotify in the browser it plays whole songs,
+otherwise 30-second previews; no OAuth or Premium needed.
 
 **Styling.** All colors are tokens on `:root` with dark values under both `prefers-color-scheme` and
 `[data-theme="dark"]`. Fonts: Permanent Marker (handwriting) and Barlow Condensed.

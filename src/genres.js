@@ -47,3 +47,13 @@ export function songGroup(song, artistByName) {
   }
   return NO_GENRE;
 }
+
+// The Breakdown genre search: specific genres (counts: Map genre -> songs) whose name contains
+// the query, picked ones left out. Names starting with it come first, then by song count.
+export function searchGenres(counts, query, picked = new Set(), limit = 8) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return [...counts].filter(([g]) => g.toLowerCase().includes(q) && !picked.has(g))
+    .sort(([a, an], [b, bn]) => b.toLowerCase().startsWith(q) - a.toLowerCase().startsWith(q) || bn - an || a.localeCompare(b))
+    .slice(0, limit);
+}

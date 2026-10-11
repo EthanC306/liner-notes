@@ -3,7 +3,9 @@
 import { openArtist } from "../artist-sheet.js";
 import { GROUPS, NO_GENRE, FEATURES_ONLY, byCountOtherLast } from "../genres.js";
 import { filterSongs, stateFor, activeState, mainArtistsOf } from "../selection.js";
-import { esc, fmtDate } from "../util.js";
+import { esc, fmtDate, initials } from "../util.js";
+import { listeningHistory } from "../data.js";
+import { hasHistory, artistListening, playsText, byArtistPlays } from "../listening.js";
 import * as tierList from "./tiers.js";
 import * as listened from "./listened.js";
 import { filter } from "../filter.js";
@@ -21,9 +23,10 @@ const SORTS = {
   name: { label: "A to Z", fn: (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }) },
   recent: { label: "Recently added", fn: (a, b) => lastAdded(b) - lastAdded(a) || b.count - a.count },
   first: { label: "First added", fn: (a, b) => firstAdded(a) - firstAdded(b) || b.count - a.count },
+  // All-time plays from your listening history; only offered when one is loaded.
+  ...(hasHistory(listeningHistory) ? { plays: { label: "Most played", fn: byArtistPlays(listeningHistory) } } : {}),
 };
 
-const initials = name => name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
 
 export function render(root, playlist) {
   const { artists } = playlist;
@@ -135,7 +138,8 @@ export function render(root, playlist) {
 
     $("#artistGrid").innerHTML = shown.map(a => {
       const added = view.sort === "recent" ? lastAdded(a) : view.sort === "first" ? firstAdded(a) : null;
-      const detail = added && isFinite(added) && added > 0 ? `Added ${fmtDate(new Date(added))}` : (a.genres[0] || "");
+      const detail = view.sort === "plays" ? playsText(artistListening(listeningHistory, a.name).plays)
+        : added && isFinite(added) && added > 0 ? `Added ${fmtDate(new Date(added))}` : (a.genres[0] || "");
       return `<li>
         <button type="button" class="artist-card" data-artist="${esc(a.name)}">
           ${a.image ? `<img src="${esc(a.image)}" alt="" loading="lazy">` : `<span class="artist-initials" aria-hidden="true">${esc(initials(a.name))}</span>`}
