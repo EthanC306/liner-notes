@@ -10,3 +10,9 @@ __pycache__/
 # Left behind by a stopped MusicBrainz run, or a write in progress
 *.partial.json
 *.tmp
+
+# Spotify streaming history exports: personal, and include an IP address on every play.
+data/history/
+# The summary history_summary.py makes from them: no IP addresses, but still your whole
+# listening record by artist, with hours and dates. Kept local too.
+listening_history.json

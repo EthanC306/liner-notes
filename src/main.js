@@ -4,7 +4,7 @@ import * as home from "./pages/home.js";
 import * as overview from "./pages/overview.js";
 import * as breakdown from "./pages/breakdown.js";
 import * as artistsPage from "./pages/artists.js";
-import { placeholder } from "./pages/placeholder.js";
+import * as recommendPage from "./pages/recommend.js";
 import { openArtist, closeArtist } from "./artist-sheet.js";
 
 const pages = {
@@ -12,8 +12,7 @@ const pages = {
   overview: { name: "Overview", page: overview },
   breakdown: { name: "Breakdown", page: breakdown },
   artists: { name: "Artists", page: artistsPage },
-  filter: { name: "Filter", page: placeholder("Filter", "It will let you narrow the playlist down to just the songs you want.") },
-  recommend: { name: "Recommend", page: placeholder("Recommend", "It will suggest songs that fit what’s already on the playlist.") },
+  recommend: { name: "Recommend", page: recommendPage },
 };
 
 const app = document.getElementById("app");

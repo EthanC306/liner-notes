@@ -26,12 +26,8 @@ export function render(root, { songs, artists }) {
         <p>Every artist on the playlist with their photo, and a tier list to drag them into from S to F.</p>
       </li>
       <li>
-        <a href="#filter">Filter</a><span class="status">Not built yet</span>
-        <p>Narrow the playlist down to just the songs you want.</p>
-      </li>
-      <li>
-        <a href="#recommend">Recommend</a><span class="status">Not built yet</span>
-        <p>Find songs that fit what’s already on the playlist.</p>
+        <a href="#recommend">Recommend</a><span class="status ready">Ready</span>
+        <p>Artists that sound like yours, from Last.fm, with their top songs and which of your artists they’re like.</p>
       </li>
     </ul>
   </section>

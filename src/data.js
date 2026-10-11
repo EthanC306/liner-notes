@@ -16,5 +16,7 @@ const built = buildPlaylist({
 });
 
 export const playlist = built.playlist;
+// Last.fm's similar artists and their top songs, for the Recommend page (lastfm_similar.py).
+export const lastfmSimilar = optional(import.meta.glob("../lastfm_similar.json", { eager: true, import: "default" }));
 export const artistByName = built.artistByName;
 export const summarize = built.summarize;

@@ -1,0 +1,108 @@
+{
+  "similar": {
+    "Hawthorne Heights": [
+      {
+        "name": "Mayday Parade",
+        "match": 0.8
+      },
+      {
+        "name": "Taking Back Sunday",
+        "match": 0.7
+      },
+      {
+        "name": "pierce the veil",
+        "match": 0.6
+      }
+    ],
+    "Pierce The Veil": [
+      {
+        "name": "Sleeping With Sirens",
+        "match": 0.9
+      },
+      {
+        "name": "Mayday Parade",
+        "match": 0.7
+      }
+    ],
+    "Motion City Soundtrack": [
+      {
+        "name": "The Starting Line",
+        "match": 0.8
+      },
+      {
+        "name": "Mayday Parade",
+        "match": 0.5
+      }
+    ],
+    "A$AP Rocky": [
+      {
+        "name": "Tyler, The Creator",
+        "match": 0.9
+      },
+      {
+        "name": "Playboi Carti",
+        "match": 0.8
+      },
+      {
+        "name": "Kendrick Lamar",
+        "match": 0.5
+      }
+    ],
+    "Lil Peep": [
+      {
+        "name": "Lil Tracy",
+        "match": 0.95
+      },
+      {
+        "name": "Wicca Phase Springs Eternal",
+        "match": 0.7
+      },
+      {
+        "name": "Playboi Carti",
+        "match": 0.3
+      },
+      {
+        "name": "lil peep, lil tracy",
+        "match": 0.9
+      },
+      {
+        "name": "Sadeyes",
+        "match": 0.4
+      },
+      {
+        "name": "sadeyes",
+        "match": 0.5
+      }
+    ],
+    "Kali Uchis": [
+      {
+        "name": "Steve Lacy",
+        "match": 1.0
+      }
+    ]
+  },
+  "top_tracks": {
+    "Mayday Parade": [
+      {
+        "name": "Jamie All Over"
+      },
+      {
+        "name": "Miserable at Best"
+      },
+      {
+        "name": "Black Cat"
+      },
+      {
+        "name": "Three Cheers for Five Years"
+      }
+    ],
+    "Playboi Carti": [
+      {
+        "name": "Magnolia"
+      },
+      {
+        "name": "Shoota"
+      }
+    ]
+  }
+}

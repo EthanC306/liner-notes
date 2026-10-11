@@ -8,7 +8,7 @@ Web app (Vite, plain ES modules, no framework):
 
 ```bash
 npm run dev       # dev server; reloads when src/ or any imported JSON data file changes
-npm run build     # static build into dist/ (dist/ is currently tracked in git)
+npm run build     # static build into dist/ (gitignored)
 npm run preview   # serve dist/ on localhost:4173
 ```
 
@@ -22,6 +22,9 @@ Data pipeline (Python, run from the repo root with the venv):
 .venv/bin/python musicbrainz_artists.py                  # genres, hometown, start year -> musicbrainz_artists.json
 .venv/bin/python musicbrainz_songs.py                    # original first-release dates -> musicbrainz_songs.json
 LASTFM_API_KEY=... .venv/bin/python lastfm_genres.py     # Last.fm tags for artists MusicBrainz lacks
+LASTFM_API_KEY=... .venv/bin/python lastfm_similar.py    # similar artists, their top songs and listener counts -> lastfm_similar.json
+                                                         # (Recommend); resumable, only fetches what's missing
+.venv/bin/python history_summary.py                      # data/history/Streaming_History_Audio_*.json -> listening_history.json
 ```
 
 Tests (Vitest for the app logic, Python unittest for the data scripts):
@@ -77,6 +80,16 @@ with that type's picks replaced by one value, so a chart never shrinks from its 
 `activeState` drops saved picks no song has. Pages subscribe with
 `filter.subscribe(() => root.isConnected ? redraw() : stop())`. Decades and months come from
 `src/decades.js` and `src/months.js`.
+
+**Recommend.** `lastfm_similar.py` only fetches; `src/recommend.js` does the scoring in the app so it follows
+the shared filter: seeds are the main artists of the filtered songs, weighted by the square root of songs
+led (chosen so overlap outranks one big artist's sound-alikes); a candidate's
+score is the sum of weight x Last.fm match over seeds; anyone on the playlist (features too) is excluded.
+
+**Streaming history.** `data/history/` holds Spotify's raw extended streaming history; it's gitignored
+because every play includes an IP address. Only `history_summary.py` reads it, writing per-artist
+hours, plays, first/last play and top songs to `listening_history.json`, which is gitignored too (it's the
+user's whole listening record); the app must work without it.
 
 **Styling.** All colors are tokens on `:root` with dark values under both `prefers-color-scheme` and
 `[data-theme="dark"]`. Fonts: Permanent Marker (handwriting) and Barlow Condensed.
