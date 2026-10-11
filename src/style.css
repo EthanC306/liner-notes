@@ -562,6 +562,34 @@ html.is-dragging, html.is-dragging * { cursor: grabbing !important; }
 .show-more[aria-expanded="true"]::after { content: " ▴"; }
 #tierListHere { margin-top: -1.5rem; }
 
+/* ---------- most listened (from the streaming history) ---------- */
+#listenedHere:empty { display: none; }
+.listened { display: grid; gap: 1.25rem; }
+.listened-head { display: grid; gap: .5rem; }
+.listened-head p { margin: 0; max-width: 44rem; }
+.listened-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1.5rem 3rem; }
+.listened-cols h3 { margin: 0 0 .5rem; font-size: 1.35rem; font-weight: 700; }
+.listened-cols h3 .muted { font-size: 1rem; font-weight: 400; margin-left: .35rem; }
+.ls-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .15rem; border-top: 1px solid var(--rule); padding-top: .4rem; }
+.ls-row {
+  font: inherit; color: var(--ink); background: none; border: 0; width: 100%; text-align: left;
+  display: grid; grid-template-columns: 2ch minmax(7rem, 11rem) minmax(0, 1fr); align-items: center; gap: .75rem;
+  padding: .35rem .5rem; border-radius: 4px;
+}
+button.ls-row { cursor: pointer; }
+button.ls-row:hover { background: var(--field); }
+.ls-rank { font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; font-size: .9rem; }
+.ls-name { font-weight: 600; font-size: 1.05rem; overflow-wrap: anywhere; line-height: 1.15; }
+.ls-off { display: block; font-weight: 400; font-size: .85rem; color: var(--ink-2); }
+/* the hours sit right at the end of each bar; bars share the track minus room for the label, one scale per list */
+.ls-track { display: flex; align-items: center; gap: .4rem; min-width: 0; }
+.ls-fill { display: block; height: 1rem; min-width: 4px; flex: none; background: var(--dye); border-radius: 0 4px 4px 0; }
+.ls-num { font-variant-numeric: tabular-nums; font-weight: 600; font-size: .95rem; white-space: nowrap; }
+@media (max-width: 640px) {
+  .ls-row { grid-template-columns: 2ch minmax(0, 1fr); gap: .2rem .6rem; }
+  .ls-track { grid-column: 2; }
+}
+
 .tier-page { gap: 1rem; }
 .tier-head { align-items: center; }
 .tier-head > div { gap: .3rem; }

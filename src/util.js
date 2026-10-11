@@ -13,6 +13,11 @@ export const fmtTotal = ms => {
   const min = Math.round(ms / 60000);
   return min < 60 ? `${min} min` : `${Math.floor(min / 60)} hr ${min % 60} min`;
 };
+// Hours listened: "45 min", "3.2 hr", "624 hr".
+export const fmtHours = h => {
+  if (h < 1) return `${Math.round(h * 60)} min`;
+  return `${h < 10 ? h.toFixed(1) : Math.round(h).toLocaleString()} hr`;
+};
 export const fmtDate = d => d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 export const fmtTime = d => d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 export function fmtRelease(album) {

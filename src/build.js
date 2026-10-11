@@ -129,6 +129,8 @@ export function buildPlaylist({ data, mbArtists = {}, mbSongs = {}, overrides = 
       addedAt: s.added_at ? new Date(s.added_at) : null,
       url: s.url,
       correction: s.correction || null,
+      // How listening_history.json names this song: its Spotify ID, or its file title if local.
+      historyKey: original.id || "local:" + original.title,
       raw: s,
     };
   });

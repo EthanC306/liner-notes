@@ -1,7 +1,11 @@
 // The artist popup: photo, where they're from, and every song of theirs on the playlist.
 // Each song opens to show its album, dates and length.
-import { artistByName, playlist } from "./data.js";
-import { esc, fmtLength, fmtTotal, fmtDate, fmtTime, fmtRelease } from "./util.js";
+import { artistByName, playlist, listeningHistory } from "./data.js";
+import { esc, fmtLength, fmtTotal, fmtHours, fmtDate, fmtTime, fmtRelease } from "./util.js";
+import { hasHistory, artistListening, songListening } from "./listening.js";
+
+// Plays and hours come from your streaming history; without it those numbers are left out.
+const withHistory = hasHistory(listeningHistory);
 
 let dialog;
 let current = null;
@@ -83,6 +87,7 @@ export function openArtist(name, { song = null } = {}) {
   const genres = artist.genres.slice(0, 6);
   const added = songs.map(s => s.addedAt).filter(Boolean).sort((a, b) => a - b);
   const totalMs = songs.reduce((t, s) => t + (s.durationMs || 0), 0);
+  const listened = artistListening(listeningHistory, name);
   const initials = name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 
   dialog.innerHTML = `
@@ -107,7 +112,9 @@ export function openArtist(name, { song = null } = {}) {
       <dl class="sheet-numbers">
         <div><dt>Songs</dt><dd>${songs.length}</dd></div>
         <div><dt>Albums</dt><dd>${artist.albums.size}</dd></div>
-        <div><dt>Total time</dt><dd>${totalMs ? fmtTotal(totalMs) : "–"}</dd></div>
+        <div><dt>Songs' length</dt><dd>${totalMs ? fmtTotal(totalMs) : "–"}</dd></div>
+        ${withHistory ? `<div><dt>Plays</dt><dd>${listened.plays.toLocaleString()}</dd></div>
+        <div><dt>Hours listened</dt><dd>${listened.plays ? fmtHours(listened.hours) : "–"}</dd></div>` : ""}
         <div><dt>First added</dt><dd>${added.length ? fmtDate(added[0]) : "–"}</dd></div>
         <div><dt>Last added</dt><dd>${added.length ? fmtDate(added[added.length - 1]) : "–"}</dd></div>
       </dl>
@@ -147,6 +154,7 @@ function renderSongs() {
     const others = s.artists.filter(a => a !== current.name);
     const a = s.albumInfo;
     const detailId = `song-${s.n}`;
+    const heard = withHistory && songListening(listeningHistory, s);
     return `
     <li>
       <button class="song-row" type="button" aria-expanded="false" aria-controls="${detailId}">
@@ -165,6 +173,7 @@ function renderSongs() {
           <div><dt>Explicit</dt><dd>${s.explicit == null ? "Unknown" : s.explicit ? "Yes" : "No"}</dd></div>
           <div><dt>Added</dt><dd>${s.addedAt ? `${fmtDate(s.addedAt)} at ${fmtTime(s.addedAt)}` : "Unknown"}</dd></div>
           <div><dt>Position</dt><dd>${s.n} of ${total}</dd></div>
+          ${heard ? `<div><dt>Played</dt><dd>${heard.plays ? `${heard.plays.toLocaleString()} ${heard.plays === 1 ? "time" : "times"}, ${fmtHours(heard.hours)}` : "Never"}</dd></div>` : ""}
           ${others.length ? `<div><dt>With</dt><dd>${others.map(o => `<button type="button" class="linkish" data-artist="${esc(o)}">${esc(o)}</button>`).join(", ")}</dd></div>` : ""}
           ${s.local ? `<div><dt>Source</dt><dd>${s.rip ? "YouTube rip" : "Local file"}, not on Spotify${s.correction ? `. Details from <a href="${esc(s.correction.url)}" target="_blank" rel="noopener">${esc(s.correction.name)}</a>` : ""}</dd></div>` : ""}
         </dl>

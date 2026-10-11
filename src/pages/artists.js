@@ -5,6 +5,7 @@ import { GROUPS, NO_GENRE, FEATURES_ONLY, byCountOtherLast } from "../genres.js"
 import { filterSongs, stateFor, activeState, mainArtistsOf } from "../selection.js";
 import { esc, fmtDate } from "../util.js";
 import * as tierList from "./tiers.js";
+import * as listened from "./listened.js";
 import { filter } from "../filter.js";
 import { decadeLabel } from "../decades.js";
 import { monthLabel } from "../months.js";
@@ -74,6 +75,7 @@ export function render(root, playlist) {
     <p class="empty" id="artistEmpty" hidden></p>
     <button type="button" class="show-more" id="showMore" aria-controls="artistGrid" hidden></button>
   </section>
+  <div id="listenedHere"></div>
   <div id="tierListHere"></div>`;
 
   const $ = s => root.querySelector(s);
@@ -164,7 +166,7 @@ export function render(root, playlist) {
   window.addEventListener("resize", onResize);
 
   root.addEventListener("click", e => {
-    if (e.target.closest("#tierListHere")) return;  // the tier list handles its own clicks
+    if (e.target.closest("#tierListHere, #listenedHere")) return;  // these handle their own clicks
     const sort = e.target.closest("[data-sort]");
     if (sort) { view.sort = sort.dataset.sort; return draw(); }
     if (e.target.closest("#featuresView")) { featuresView = !featuresView; return draw(); }
@@ -186,5 +188,6 @@ export function render(root, playlist) {
   });
 
   draw();
+  listened.render($("#listenedHere"), playlist);
   tierList.render($("#tierListHere"), playlist);
 }

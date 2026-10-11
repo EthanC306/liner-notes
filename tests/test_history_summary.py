@@ -80,6 +80,12 @@ class Matching(unittest.TestCase):
         row = play("Lil Peep", "The Way I See Things", 200_000, "2020-01-01T00:00:00Z", "peep1")
         self.assertEqual(match_song(row, *self.index), "local:Y2Mate.is - lil peep the way i see things")
 
+    def test_duplicate_with_another_id_counts_under_the_first_copy(self):
+        # the app keeps the first copy, so plays of the second ID go to the first one's key
+        index = playlist_index(PLAYLIST + [song("Lucid Dreams", "Juice WRLD", "lucid2")])
+        row = play("Juice WRLD", "Lucid Dreams", 200_000, "2020-01-01T00:00:00Z", "lucid2")
+        self.assertEqual(match_song(row, *index), "lucid1")
+
     def test_unmatched_plays_still_count_for_their_artist(self):
         s = summarize(ROWS, PLAYLIST, CORRECTIONS)
         self.assertEqual(s["artists"]["Powfu"]["plays"], 1)

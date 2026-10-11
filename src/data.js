@@ -18,5 +18,8 @@ const built = buildPlaylist({
 export const playlist = built.playlist;
 // Last.fm's similar artists and their top songs, for the Recommend page (lastfm_similar.py).
 export const lastfmSimilar = optional(import.meta.glob("../lastfm_similar.json", { eager: true, import: "default" }));
+// Your listening history summary (history_summary.py). Gitignored and personal, so it's
+// often missing: then "Never heard only" and "Bring it back" are unavailable.
+export const listeningHistory = optional(import.meta.glob("../listening_history.json", { eager: true, import: "default" }));
 export const artistByName = built.artistByName;
 export const summarize = built.summarize;

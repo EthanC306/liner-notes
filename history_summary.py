@@ -50,17 +50,20 @@ def song_key(song):
 
 def playlist_index(songs, corrections=None):
     """Lookup tables from Spotify ID and from title + main artist to each song's key.
-    Local files are matched under their corrected title and artist when there is one."""
+    Local files are matched under their corrected title and artist when there is one.
+    A duplicate song shares the key of its first copy, the one the app keeps."""
     corrections = corrections or {}
     by_id, by_name = {}, {}
     for s in songs:
-        key = song_key(s)
+        fix = corrections.get("local:" + s["title"]) if s.get("is_local") else None
+        names = [name_key(src["title"], src["artists"][0]["name"]) for src in (s, fix)
+                 if src and src.get("title") and src.get("artists") and src["artists"][0].get("name")]
+        seen = [by_id.get(s.get("id"))] + [by_name.get(n) for n in names]
+        key = next((k for k in seen if k), song_key(s))
         if s.get("id"):
             by_id.setdefault(s["id"], key)
-        fix = corrections.get("local:" + s["title"]) if s.get("is_local") else None
-        for src in (s, fix):
-            if src and src.get("title") and src.get("artists"):
-                by_name.setdefault(name_key(src["title"], src["artists"][0]["name"]), key)
+        for n in names:
+            by_name.setdefault(n, key)
     return by_id, by_name
 
 
