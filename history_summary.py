@@ -1,6 +1,7 @@
 """
 Summarize your Spotify streaming history for the app: plays and hours for every artist
-(all time and the last 12 months) and for every playlist song. Saves listening_history.json.
+(all time and the last 12 months) and for every playlist song, plus each song's plays since
+it was added to the playlist and its last play. Saves listening_history.json.
 
 Get the history from Spotify: Account -> Privacy settings -> Download your data ->
 "Extended streaming history". Put the Streaming_History_Audio_*.json files in
@@ -75,8 +76,14 @@ def playlist_index(songs, corrections=None):
     """Lookup tables from Spotify ID and from title + main artist to each song's key.
     Local files are matched under their corrected title and artist when there is one.
     A duplicate song shares the key of its first copy, the one the app keeps."""
+    by_id, by_name, _ = index_with_added(songs, corrections)
+    return by_id, by_name
+
+
+def index_with_added(songs, corrections=None):
+    """playlist_index plus each key's added date: the earliest of its copies, like the app."""
     corrections = corrections or {}
-    by_id, by_name = {}, {}
+    by_id, by_name, added = {}, {}, {}
     for s in songs:
         fix = corrections.get("local:" + s["title"]) if s.get("is_local") else None
         names = [name_key(src["title"], src["artists"][0]["name"]) for src in (s, fix)
@@ -87,7 +94,9 @@ def playlist_index(songs, corrections=None):
             by_id.setdefault(s["id"], key)
         for n in names:
             by_name.setdefault(n, key)
-    return by_id, by_name
+        if s.get("added_at") and (key not in added or s["added_at"] < added[key]):
+            added[key] = s["added_at"]
+    return by_id, by_name, added
 
 
 def match_song(row, by_id, by_name):
@@ -133,7 +142,7 @@ def summarize(plays, playlist_songs=(), corrections=None, tz="UTC"):
     first = min(r["ts"] for r in music)
     last = max(r["ts"] for r in music)
     recent_from = (parse_ts(last) - timedelta(days=RECENT_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    by_id, by_name = playlist_index(playlist_songs, corrections)
+    by_id, by_name, added = index_with_added(playlist_songs, corrections)
 
     artists, songs, years = {}, {}, {}
     for row in music:
@@ -144,7 +153,7 @@ def summarize(plays, playlist_songs=(), corrections=None, tz="UTC"):
                                       "recent_plays": 0, "first": local, "last": local, "ranges": {}})
         a["first"], a["last"] = min(a["first"], local), max(a["last"], local)
         key = match_song(row, by_id, by_name)
-        s = songs.setdefault(key, {"ms": 0, "plays": 0, "skips": 0}) if key else None
+        s = songs.setdefault(key, {"ms": 0, "plays": 0, "skips": 0, "since_added": 0, "last": None}) if key else None
         y = years.setdefault(str(local.year), {"ms": 0, "plays": 0, "skips": 0})
         played = ms >= COUNTED_PLAY_MS
         recent = ts >= recent_from
@@ -162,6 +171,12 @@ def summarize(plays, playlist_songs=(), corrections=None, tz="UTC"):
         for total in filter(None, (a, s, y)):
             total["ms"] += ms
             total["plays" if played else "skips"] += 1
+        # Dead weight (Breakdown): plays since the song was added (both UTC timestamps),
+        # and the local date of its last play.
+        if s and played:
+            if ts >= added.get(key, ""):
+                s["since_added"] += 1
+            s["last"] = max(s["last"] or "", local.date().isoformat())
         if recent:
             a["recent_ms"] += ms
             if played:
@@ -179,7 +194,8 @@ def summarize(plays, playlist_songs=(), corrections=None, tz="UTC"):
                            "first": a["first"].date().isoformat(), "last": a["last"].date().isoformat(),
                            "ranges": {key: finish_range(value) for key, value in a["ranges"].items()}}
                     for name, a in artists.items()},
-        "songs": {key: {"hours": hours(s["ms"]), "plays": s["plays"], "skips": s["skips"]}
+        "songs": {key: {"hours": hours(s["ms"]), "plays": s["plays"], "skips": s["skips"],
+                        "plays_since_added": s["since_added"], "last": s["last"]}
                   for key, s in songs.items()},
     }
 

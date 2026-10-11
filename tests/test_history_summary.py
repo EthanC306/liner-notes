@@ -53,7 +53,8 @@ class SkipRule(unittest.TestCase):
     def test_skip_time_still_counts_toward_hours(self):
         # 240s + 200s played, plus 29.999s and 10s skipped: all of it is listening time
         self.assertEqual(self.juice["hours"], round(479_999 / 3_600_000, 2))
-        self.assertEqual(self.s["songs"]["lucid1"], {"hours": round(469_999 / 3_600_000, 2), "plays": 2, "skips": 1})
+        self.assertEqual(self.s["songs"]["lucid1"], {"hours": round(469_999 / 3_600_000, 2), "plays": 2, "skips": 1,
+                                                     "plays_since_added": 2, "last": "2021-06-01"})
 
     def test_29_999_ms_is_a_skip(self):
         s = summarize([play("A", "B", 29_999, "2020-01-01T00:00:00Z")])
@@ -104,6 +105,39 @@ class TimeZones(unittest.TestCase):
     def test_history_tz_overrides_the_computer(self):
         with mock.patch.dict(os.environ, {"HISTORY_TZ": "Europe/Berlin"}):
             self.assertEqual(local_timezone_name(), "Europe/Berlin")
+
+
+class SinceAdded(unittest.TestCase):
+    """Dead weight on Breakdown: plays since each song was added, and its last play."""
+
+    def added(self, when, track_id="lucid1"):
+        return [dict(song("Lucid Dreams", "Juice WRLD", track_id), added_at=when)]
+
+    def test_counts_only_plays_after_the_song_was_added(self):
+        s = summarize(ROWS, self.added("2021-01-01T00:00:00Z"))["songs"]["lucid1"]
+        self.assertEqual((s["plays"], s["plays_since_added"]), (2, 1))
+
+    def test_a_play_at_the_moment_it_was_added_counts(self):
+        s = summarize(ROWS, self.added("2021-06-01T10:00:00Z"))["songs"]["lucid1"]
+        self.assertEqual(s["plays_since_added"], 1)
+
+    def test_uses_the_earliest_added_date_of_duplicate_copies(self):
+        copies = self.added("2021-01-01T00:00:00Z") + self.added("2019-01-01T00:00:00Z", "lucid2")
+        self.assertEqual(summarize(ROWS, copies)["songs"]["lucid1"]["plays_since_added"], 2)
+
+    def test_no_added_date_counts_every_play(self):
+        self.assertEqual(summarize(ROWS, PLAYLIST)["songs"]["lucid1"]["plays_since_added"], 2)
+
+    def test_last_played_is_the_last_counted_play_in_local_time(self):
+        # the later 29.999 s play is a skip, so it isn't the last play
+        rows = ROWS + [play("Juice WRLD", "Lucid Dreams", 60_000, "2024-01-01T03:30:00Z", "lucid1")]
+        self.assertEqual(summarize(ROWS, PLAYLIST)["songs"]["lucid1"]["last"], "2021-06-01")
+        self.assertEqual(summarize(rows, PLAYLIST, tz="America/New_York")["songs"]["lucid1"]["last"], "2023-12-31")
+
+    def test_a_song_with_only_skips_has_no_last_play(self):
+        rows = [play("Juice WRLD", "Lucid Dreams", 10_000, "2021-01-01T00:00:00Z", "lucid1")]
+        s = summarize(rows, PLAYLIST)["songs"]["lucid1"]
+        self.assertEqual((s["plays_since_added"], s["last"]), (0, None))
 
 
 class Matching(unittest.TestCase):
