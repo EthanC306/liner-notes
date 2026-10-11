@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The History page's calculations (src/history.js).
 import { describe, it, expect, vi } from "vitest";
-import { hasHistory, rangeOptions, validRange, thenVsNow, ghosts } from "../src/history.js";
+import { hasHistory, rangeOptions, validRange, thenVsNow, ghosts, eras } from "../src/history.js";
 import { render } from "../src/pages/history.js";
 import { openArtist } from "../src/artist-sheet.js";
 
@@ -131,6 +131,78 @@ describe("Ghosts", () => {
     expect(ghosts(history, playlist, "1999").headline).toBe("No ghosts in this time range.");
   });
 
+  it("takes peak year and last played from all time, whatever the range", () => {
+    const yearOnly = { hours: 30, plays: 9, peak_year: "2022", last: "2022-12-31", top_songs: [] };
+    const all = { hours: 300, plays: 90, peak_year: "2021", last: "2026-05-21", top_songs: [] };
+    const result = ghosts({ artists: { G: { last: "2026-05-21", ranges: { all, "2022": yearOnly } } } }, undefined, "2022");
+    expect(result.rows[0]).toMatchObject({ hours: 30, plays: 9, peak_year: "2021", last: "2026-05-21" });
+  });
+
+  it("ranks ghosts, scales hours to the top ghost and song plays within each artist", () => {
+    const songs = [{ title: "One", plays: 40 }, { title: "Two", plays: 10 }];
+    const rows = ghosts({ artists: {
+      X: { ranges: { all: { ...detail(200), top_songs: songs } } },
+      Y: { ranges: { all: { ...detail(50), top_songs: [] } } },
+    } }).rows;
+    expect(rows.map(a => [a.name, a.rank, a.width])).toEqual([["X", 1, 100], ["Y", 2, 25]]);
+    expect(rows[0].top_songs.map(s => s.width)).toEqual([100, 25]);
+    expect(rows[1].top_songs).toEqual([]);
+  });
+
+  it("uses the playlist photo and Spotify link when there is one, and a Spotify search otherwise", () => {
+    const withInfo = { artists: [{ name: "A", count: 1, image: "a.jpg", url: "https://open.spotify.com/artist/a" }] };
+    const rows = ghosts(history, withInfo).rows;
+    expect(rows.find(a => a.name === "A")).toMatchObject({ image: "a.jpg", url: "https://open.spotify.com/artist/a" });
+    expect(rows.find(a => a.name === "C")).toMatchObject({ image: null, url: "https://open.spotify.com/search/C" });
+  });
+
+  it("falls back to the old playlist's photo and link, after the current playlist's", () => {
+    const withInfo = { artists: [{ name: "A", count: 1, image: "a.jpg", url: "https://open.spotify.com/artist/a" }] };
+    const old = {
+      a1: { name: "A", image: "old-a.jpg", url: "https://open.spotify.com/artist/old-a" },
+      c1: { name: "C", image: "c.jpg", url: "https://open.spotify.com/artist/c" },
+      b1: { name: "B", image: null, url: null },
+    };
+    const rows = ghosts(history, withInfo, "all", old).rows;
+    expect(rows.find(a => a.name === "A")).toMatchObject({ image: "a.jpg", url: "https://open.spotify.com/artist/a" });
+    expect(rows.find(a => a.name === "C")).toMatchObject({ image: "c.jpg", url: "https://open.spotify.com/artist/c" });
+    expect(rows.find(a => a.name === "B")).toMatchObject({ image: null, url: "https://open.spotify.com/search/B" });
+    const root = document.createElement("div");
+    localStorage.clear();
+    render(root, withInfo, history, old);
+    expect(root.querySelector('.ghost-photo img[src="c.jpg"]')).not.toBeNull();
+  });
+
+  it("features number one, shows six until Show all, and links names to Spotify", () => {
+    localStorage.clear();
+    const artists = Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`Artist ${i}`, { ranges: { all: detail(100 - i) } }]));
+    const root = document.createElement("div");
+    render(root, { artists: [] }, { artists });
+    const cards = () => root.querySelectorAll(".ghost-card");
+    expect(cards()).toHaveLength(6);
+    expect(cards()[0].classList.contains("ghost-featured")).toBe(true);
+    expect(root.querySelectorAll(".ghost-featured")).toHaveLength(1);
+    expect(cards()[1].querySelector(".ghost-rank").textContent).toBe("02");
+    expect(cards()[0].querySelector("a").getAttribute("href")).toBe("https://open.spotify.com/search/Artist%200");
+    const more = root.querySelector("[data-ghosts-more]");
+    expect(more.textContent).toBe("Show all 9 ghosts");
+    more.click();
+    expect(cards()).toHaveLength(9);
+    expect(root.querySelector("[data-ghosts-more]").getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("shows an empty state with a way back to all time", () => {
+    localStorage.setItem("playlist-stat:history-range", "recent");
+    const root = document.createElement("div");
+    const quiet = { artists: { A: { ranges: { all: detail(50), recent: detail(2) } } } };
+    render(root, { artists: [] }, quiet);
+    expect(root.querySelector(".ghost-list")).toBeNull();
+    expect(root.querySelector(".ghost-empty").textContent).toContain("No ghosts in the last 12 months.");
+    root.querySelector(".ghost-empty [data-range]").click();
+    expect(root.querySelector(".ghost-list").textContent).toContain("A");
+    localStorage.clear();
+  });
+
   it("updates Ghosts when the range changes without changing Then vs now", () => {
     localStorage.clear();
     const root = document.createElement("div");
@@ -142,5 +214,58 @@ describe("Ghosts", () => {
     expect(root.querySelector(".ghost-list [data-artist]")).toBeNull();
     expect(root.querySelector(".ghost-list").textContent).not.toContain("100");
     expect(root.querySelector(".history-comparison").innerHTML).toBe(comparison);
+  });
+});
+
+describe("Eras", () => {
+  const history = { years: { "2025": { hours: 200 }, "2023": { hours: 100 } }, artists: Object.fromEntries(
+    Array.from({ length: 8 }, (_, i) => [String.fromCharCode(65 + i), {
+      hours: 80 - i * 10,
+      plays: 100,
+      ranges: { "2023": { hours: i === 7 ? 65 : 5, plays: 50 }, "2025": { hours: i === 0 ? 130 : 10, plays: 50 } },
+    }])
+  ) };
+
+  it("orders years oldest first, uses total hours for a common scale, and labels annual leaders", () => {
+    const result = eras(history);
+    expect(result.years.map(y => [y.year, y.hours, y.height, y.leader])).toEqual([
+      ["2023", 100, 50, { name: "H", hours: 65 }],
+      ["2025", 200, 100, { name: "A", hours: 130 }],
+    ]);
+  });
+
+  it("fixes six colors and stacking order by overall hours, grouping everyone else in grey", () => {
+    const result = eras(history);
+    expect(result.legend.map(a => a.name)).toEqual(["A", "B", "C", "D", "E", "F", "Everyone else"]);
+    result.years.forEach(y => {
+      expect(y.segments.map(a => a.color)).toEqual([
+        "var(--genre-1)", "var(--genre-2)", "var(--genre-3)", "var(--genre-4)", "var(--genre-5)", "var(--genre-6)", "var(--genre-rest)",
+      ]);
+      expect(y.segments.reduce((n, a) => n + a.percent, 0)).toBeCloseTo(100);
+      expect(y.segments.reduce((n, a) => n + a.hours, 0)).toBe(y.hours);
+    });
+    expect(result.years[0].segments.at(-1).hours).toBe(70);
+  });
+
+  it("handles missing history, empty years, and deterministic ties", () => {
+    expect(eras(undefined)).toEqual({ legend: [], years: [] });
+    const result = eras({ years: { "2024": { hours: 0 } }, artists: { B: { hours: 0 }, A: { hours: 0 } } });
+    expect(result.legend[0].name).toBe("A");
+    expect(result.years[0]).toMatchObject({ height: 0, leader: null, segments: [] });
+  });
+
+  it("selects a year through the chart and keeps every year and its scale visible", () => {
+    localStorage.clear();
+    const root = document.createElement("div");
+    render(root, { artists: [] }, history);
+    const chart = root.querySelector(".eras-chart");
+    const heights = [...chart.querySelectorAll(".eras-column")].map(n => n.style.height);
+    chart.querySelector('[data-range="2023"]').click();
+    expect(root.querySelector('.range-switch [data-range="2023"]').getAttribute("aria-pressed")).toBe("true");
+    expect(chart.querySelector('[data-range="2023"]').getAttribute("aria-pressed")).toBe("true");
+    expect(localStorage.getItem("playlist-stat:history-range")).toBe("2023");
+    expect(chart.querySelectorAll(".eras-year")).toHaveLength(2);
+    expect([...chart.querySelectorAll(".eras-column")].map(n => n.style.height)).toEqual(heights);
+    expect(root.querySelector(".ghost-list").textContent).toContain("H");
   });
 });

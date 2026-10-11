@@ -13,7 +13,7 @@ import { GROUPS, NO_GENRE, byCountOtherLast } from "../genres.js";
 import { swatch } from "../genre-colors.js";
 import { decadeLabel } from "../decades.js";
 import { monthLabel } from "../months.js";
-import { esc, reducedMotion } from "../util.js";
+import { esc, reducedMotion, spotifySearch } from "../util.js";
 
 const SHOWN = 20;
 // Every burn shows at least 5 artists, each with 3 different songs (so at least 15 songs).
@@ -33,7 +33,6 @@ const DEFAULT_BOARD = { seeds: [], adventure: 50, popularity: 50, neverHeard: fa
 const sameBoard = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 const groupName = id => [...GROUPS, NO_GENRE].find(g => g.id === id)?.name || id;
-const spotifySearch = (...words) => "https://open.spotify.com/search/" + encodeURIComponent(words.join(" "));
 const fmtListeners = n => !n ? "" : n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, "")}M listeners` : n >= 1000 ? `${Math.round(n / 1000)}K listeners` : `${n} listeners`;
 
 export function render(root, playlist) {

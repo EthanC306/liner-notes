@@ -21,5 +21,8 @@ export const lastfmSimilar = optional(import.meta.glob("../lastfm_similar.json",
 // Your listening history summary (history_summary.py). Gitignored and personal, so it's
 // often missing: then "Never heard only" and "Bring it back" are unavailable.
 export const listeningHistory = optional(import.meta.glob("../listening_history.json", { eager: true, import: "default" }));
+// Photos and links for the old playlist's artists (spotify_playlist_export.py --artists-for),
+// so Ghosts who left the playlist still get a photo.
+export const oldPlaylistArtists = optional(import.meta.glob("../old_playlist_artists.json", { eager: true, import: "default" }));
 export const artistByName = built.artistByName;
 export const summarize = built.summarize;

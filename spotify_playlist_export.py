@@ -15,6 +15,11 @@ Run:
 Options:
   --out <file>     save somewhere other than playlist_songs.json
   --no-artists     skip the per-artist lookups (photos), for a quick export
+  --artists-for <export.json>
+                   only look up the artists in an earlier export (like old_playlist.json)
+                   and save them to old_playlist_artists.json (or --out); its songs are left
+                   alone. The History page's Ghosts use these photos for artists who aren't
+                   on the current playlist anymore.
 """
 
 import base64
@@ -40,6 +45,7 @@ REDIRECT_URI = "http://127.0.0.1:8888/callback"
 DEFAULT_PLAYLIST = "https://open.spotify.com/playlist/4C8MF0IAnwunqllE2zSc3g"
 SCOPES = "playlist-read-private playlist-read-collaborative"
 OUTPUT_FILE = "playlist_songs.json"
+ARTISTS_FOR_FILE = "old_playlist_artists.json"
 # Earlier added dates found by fix_added_dates.py, reapplied on every export.
 OVERRIDES_FILE = "date_overrides.json"
 API = "https://api.spotify.com/v1"
@@ -212,14 +218,20 @@ def get_songs(token, playlist_id):
     return songs
 
 
-def get_artists(token, songs):
-    """Looks up every artist once for their genres and photo.
+def artists_to_look_up(songs, known):
+    """Splits the songs' artist ids into the ones `known` already has (copied, no request)
+    and the ones that still need a lookup."""
+    ids = sorted({a["id"] for s in songs for a in s["artists"] if a.get("id")})
+    return {i: known[i] for i in ids if i in known}, [i for i in ids if i not in known]
+
+
+def get_artists(token, songs, known=None):
+    """Looks up every artist once for their genres and photo, reusing any in `known`.
 
     Spotify no longer allows asking for many artists in one request,
     so this makes one request per artist.
     """
-    ids = sorted({a["id"] for s in songs for a in s["artists"] if a["id"]})
-    artists = {}
+    artists, ids = artists_to_look_up(songs, known or {})
     for number, artist_id in enumerate(ids, start=1):
         info = api_get(token, API + "/artists/" + artist_id)
         artists[artist_id] = {
@@ -274,6 +286,11 @@ def main():
         del args[i:i + 2]
     skip_artists = "--no-artists" in args
     args = [a for a in args if a != "--no-artists"]
+    if "--artists-for" in args:
+        i = args.index("--artists-for")
+        if i + 1 >= len(args):
+            sys.exit("--artists-for needs an export file, like: --artists-for old_playlist.json")
+        return artists_for(args[i + 1], output_file if output_file != OUTPUT_FILE else ARTISTS_FOR_FILE)
     playlist = args[0] if args else DEFAULT_PLAYLIST
     token = log_in()
     playlist_id = playlist_id_from(playlist)
@@ -290,6 +307,23 @@ def main():
             print("Put back the earlier added date for " + str(fixed) + " songs from " + OVERRIDES_FILE)
     save(info, songs, artists, output_file)
     print("Done. " + str(len(songs)) + " songs saved to " + output_file)
+
+
+def artists_for(export_file, output_file):
+    """Artist photos and links for an earlier export, without exporting its playlist again."""
+    with open(export_file, encoding="utf-8") as f:
+        songs = json.load(f)["songs"]
+    known = {}
+    if os.path.exists(OUTPUT_FILE):
+        with open(OUTPUT_FILE, encoding="utf-8") as f:
+            known = json.load(f).get("artists") or {}
+    reused, missing = artists_to_look_up(songs, known)
+    print(str(len(reused)) + " artists are already in " + OUTPUT_FILE + "; looking up " + str(len(missing)) + " more")
+    token = log_in()
+    artists = get_artists(token, songs, known)
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(artists, f, ensure_ascii=False, indent=2)
+    print("Done. " + str(len(artists)) + " artists saved to " + output_file)
 
 
 if __name__ == "__main__":

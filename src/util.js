@@ -2,6 +2,12 @@ export function esc(s) {
   return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
+// For artists and songs the data has no Spotify link for.
+export const spotifySearch = (...words) => "https://open.spotify.com/search/" + encodeURIComponent(words.join(" "));
+
+// Stand-in for a missing artist photo: "Tyler, The Creator" -> "TT".
+export const initials = name => name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
+
 export const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export const fmtLength = ms => {
